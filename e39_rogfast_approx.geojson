@@ -1,0 +1,295 @@
+{
+  "type": "FeatureCollection",
+  "name": "e39_rogfast_approx",
+  "metadata": {
+    "title": "E39 Rogfast approximate GeoJSON",
+    "crs_note": "Coordinates are WGS84 longitude/latitude (EPSG:4326)",
+    "disclaimer": "This file is a usable, approximate GeoJSON assembled from official public references. It is not an official Statens vegvesen or municipal export.",
+    "created_by": "OpenAI ChatGPT",
+    "date": "2026-03-21"
+  },
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "rogfast_main_tunnel_approx",
+        "name": "E39 Rogfast main tunnel (approximate)",
+        "feature_type": "main_tunnel_centerline",
+        "status": "under_construction",
+        "official_length_km": 26.7,
+        "geometry_length_km": 26.729,
+        "accuracy": "approximate",
+        "geometry_basis": "Schematic line built from official project and plan-map references; not an official export.",
+        "source_primary": "Statens vegvesen project page and regulation-plan documents"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            5.6358,
+            59.01191
+          ],
+          [
+            5.592,
+            59.028
+          ],
+          [
+            5.545,
+            59.045
+          ],
+          [
+            5.495,
+            59.0575
+          ],
+          [
+            5.445,
+            59.066
+          ],
+          [
+            5.42,
+            59.086
+          ],
+          [
+            5.449,
+            59.188
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "rogfast_kvitsoy_branch_tunnel_approx",
+        "name": "Rogfast Kvitsøy branch tunnel (approximate)",
+        "feature_type": "branch_tunnel_centerline",
+        "status": "under_construction",
+        "official_length_km": 4.1,
+        "geometry_length_km": 4.45,
+        "accuracy": "approximate",
+        "geometry_basis": "Schematic branch from main tunnel toward Kvitsøy surface connection.",
+        "source_primary": "Statens vegvesen / KS2 references"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            5.42,
+            59.086
+          ],
+          [
+            5.404,
+            59.08
+          ],
+          [
+            5.397,
+            59.073
+          ],
+          [
+            5.404,
+            59.068
+          ],
+          [
+            5.418,
+            59.069
+          ],
+          [
+            5.4336,
+            59.0716
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "rogfast_kvitsoy_surface_road_approx",
+        "name": "Rogfast Kvitsøy road in daylight (approximate)",
+        "feature_type": "surface_road_centerline",
+        "status": "under_construction",
+        "official_length_km": 2.0,
+        "geometry_length_km": 1.71,
+        "accuracy": "approximate",
+        "geometry_basis": "Traced schematically from official Kvitsøy regulation plan maps R601-R603.",
+        "source_primary": "Kvitsøy regulation-plan maps R601-R603"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            5.408,
+            59.0642
+          ],
+          [
+            5.4098,
+            59.0647
+          ],
+          [
+            5.412,
+            59.0656
+          ],
+          [
+            5.416,
+            59.0668
+          ],
+          [
+            5.4205,
+            59.0682
+          ],
+          [
+            5.4235,
+            59.0697
+          ],
+          [
+            5.4275,
+            59.0709
+          ],
+          [
+            5.4336,
+            59.0716
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "rogfast_bokn_surface_road_approx",
+        "name": "Rogfast Bokn road in daylight (approximate)",
+        "feature_type": "surface_road_centerline",
+        "status": "under_construction",
+        "official_length_km": 2.3,
+        "geometry_length_km": 2.155,
+        "accuracy": "approximate",
+        "geometry_basis": "Schematic line between Laupland portal area and tie-in toward Knarholmen.",
+        "source_primary": "Statens vegvesen / Bokn plan references"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            5.449,
+            59.188
+          ],
+          [
+            5.451,
+            59.1925
+          ],
+          [
+            5.453,
+            59.1985
+          ],
+          [
+            5.455,
+            59.2045
+          ],
+          [
+            5.456,
+            59.207
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "Harestad_portal_area",
+        "name": "Harestad portal area",
+        "feature_type": "reference_point",
+        "accuracy": "approximate",
+        "description": "Approximate south portal / tie-in area in Randaberg"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          5.6358,
+          59.01191
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "Kvitsoy_roundabout_portal_area",
+        "name": "Kvitsoy roundabout portal area",
+        "feature_type": "reference_point",
+        "accuracy": "approximate",
+        "description": "Approximate surface portal / roundabout area on Kvitsøy"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          5.4336,
+          59.0716
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "Kvitsoy_south_tie_in_area",
+        "name": "Kvitsoy south tie in area",
+        "feature_type": "reference_point",
+        "accuracy": "approximate",
+        "description": "Approximate tie-in toward fv. 551 on Kvitsøy"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          5.408,
+          59.0642
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "Laupland_portal_area",
+        "name": "Laupland portal area",
+        "feature_type": "reference_point",
+        "accuracy": "approximate",
+        "description": "Approximate north portal area at Laupland in Bokn"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          5.449,
+          59.188
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "Knarholmen_tie_in_area",
+        "name": "Knarholmen tie in area",
+        "feature_type": "reference_point",
+        "accuracy": "approximate",
+        "description": "Approximate tie-in toward Knarholmen / existing E39 in Bokn"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          5.456,
+          59.207
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "Arsvagen_side_tunnel_area",
+        "name": "Arsvagen side tunnel area",
+        "feature_type": "reference_point",
+        "accuracy": "approximate",
+        "description": "Approximate Arsvågen side tunnel / logistics area"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          5.45631,
+          59.16986
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,201 @@
+{
+  "type": "FeatureCollection",
+  "bbox": [
+    5.443,
+    59.1845,
+    5.49,
+    59.704
+  ],
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "E39 Bokn–Bømlafjorden alternativ 1 (forenklet, håndtegnet)",
+        "route_id": "e39_bokn_bomlafjorden_alt1_simplified_v1",
+        "status": "conceptual",
+        "source_type": "hand_traced_from_official_plan_figures",
+        "source_project": "Statens vegvesen – Kommunedelplan E39 Bokn–Bømlafjorden",
+        "source_basis": [
+          "Sammenstilling av sammenhengende linjer (februar 2026)",
+          "Alternativ 1 sammensatt av delstrekninger 3.1 A, 3.2 A, 3.3 A, 3.4 A, 3.5 B, 3.6 B, 3.7 A"
+        ],
+        "crs": "EPSG:4326",
+        "geometry_quality": "simplified",
+        "fit_for": [
+          "web maps",
+          "Codex prototypes",
+          "visual concept sketches"
+        ],
+        "not_fit_for": [
+          "engineering",
+          "legal plan boundaries",
+          "precise analysis"
+        ],
+        "notes": "Approximate line created from official plan note and map figures. Several vertices are estimated between named localities.",
+        "created_by": "OpenAI ChatGPT",
+        "created_date": "2026-03-21"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            5.443,
+            59.1845
+          ],
+          [
+            5.4435,
+            59.196
+          ],
+          [
+            5.4465,
+            59.2045
+          ],
+          [
+            5.452,
+            59.214
+          ],
+          [
+            5.454,
+            59.228
+          ],
+          [
+            5.466441,
+            59.246207
+          ],
+          [
+            5.4655,
+            59.2575
+          ],
+          [
+            5.4735,
+            59.268
+          ],
+          [
+            5.47836,
+            59.27915
+          ],
+          [
+            5.474,
+            59.289
+          ],
+          [
+            5.468,
+            59.305
+          ],
+          [
+            5.46416,
+            59.3137
+          ],
+          [
+            5.449883,
+            59.3179
+          ],
+          [
+            5.454,
+            59.332
+          ],
+          [
+            5.46,
+            59.347
+          ],
+          [
+            5.468,
+            59.363
+          ],
+          [
+            5.476,
+            59.377
+          ],
+          [
+            5.482,
+            59.392
+          ],
+          [
+            5.478,
+            59.408
+          ],
+          [
+            5.4633406,
+            59.4299784
+          ],
+          [
+            5.466,
+            59.44
+          ],
+          [
+            5.4679,
+            59.4633
+          ],
+          [
+            5.4705,
+            59.479
+          ],
+          [
+            5.4725,
+            59.492
+          ],
+          [
+            5.47,
+            59.505
+          ],
+          [
+            5.474,
+            59.52
+          ],
+          [
+            5.476,
+            59.535
+          ],
+          [
+            5.468,
+            59.548
+          ],
+          [
+            5.454,
+            59.56
+          ],
+          [
+            5.462,
+            59.572
+          ],
+          [
+            5.476,
+            59.586
+          ],
+          [
+            5.49,
+            59.603
+          ],
+          [
+            5.486,
+            59.62
+          ],
+          [
+            5.48,
+            59.635
+          ],
+          [
+            5.4754426,
+            59.649698
+          ],
+          [
+            5.478,
+            59.662
+          ],
+          [
+            5.484,
+            59.675
+          ],
+          [
+            5.487,
+            59.69
+          ],
+          [
+            5.488,
+            59.704
+          ]
+        ]
+      }
+    }
+  ]
+}

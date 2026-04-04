@@ -5,16 +5,18 @@ En liten statisk webapp som lar deg:
 - skrive inn fra- og til-adresse
 - beregne kjorerute, distanse og estimert kjoretid
 - velge om ferger skal tillates i ruteberegning
+- sammenligne dagens nett med et framtidsnett i et eget kart
 - vise alle veier for Vestlandet som eget kartlag
 
 ## Filer
 
 - `index.html` setter opp grensesnittet
 - `styles.css` styrer utseendet
-- `app.js` handterer kart, adresseoppslag, rute og lasting av vegfliser
+- `app.js` handterer kart, adresseoppslag, ruter og lasting av vegfliser
 - `data/road-tiles/` inneholder vegdata delt opp i geografiske fliser
 - `data/vestlandet-road-tiles.json` er manifestet som forteller appen hvilke fliser som finnes
 - `scripts/build-road-dataset.ps1` bygger datasettene fra OpenStreetMap via Overpass
+- `hordfast_simplified.geojson`, `e39_rogfast_approx.geojson` og `e39_bokn_bomlafjorden_alt1_simplified.geojson` brukes i framtidskartet
 
 ## Slik starter du lokalt
 
@@ -36,6 +38,7 @@ http://localhost:8000
 - Adresseoppslag: Nominatim
 - Ruteberegning: Valhalla public demo
 - Veglag: lokale GeoJSON-fliser generert fra OpenStreetMap-data
+- Framtidskart: lokale prosjektlinjer lagt oppa vegnettet og brukt som nye forbindelser i hoyre kart
 
 ## Merknad
 

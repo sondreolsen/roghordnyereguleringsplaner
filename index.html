@@ -19,8 +19,8 @@
         <p class="eyebrow">Vestlandet</p>
         <h1>Kjoretid mellom adresser</h1>
         <p class="intro">
-          Skriv inn start og mal for a se rute, distanse og estimert kjoretid. Kartet viser
-          ogsa et detaljert vegkart for Vestlandet lastet fra lokale datafiler.
+          Skriv inn start og mal for a sammenligne dagens vegnett med et framtidskart
+          der Hordfast, Rogfast og Bokn-Bomlafjorden er lagt inn som nye forbindelser.
         </p>
       </div>
 
@@ -31,7 +31,7 @@
             id="from-input"
             name="from"
             type="text"
-            placeholder="For eksempel Vaagsallmenningen 1, Bergen"
+            placeholder="For eksempel Os, Vestland"
             required
           >
         </label>
@@ -42,14 +42,14 @@
             id="to-input"
             name="to"
             type="text"
-            placeholder="For eksempel Sjogata 6, Stavanger"
+            placeholder="For eksempel Stord"
             required
           >
         </label>
 
         <label class="toggle route-toggle">
           <input id="ferry-toggle" type="checkbox" checked>
-          <span>Tillat ferger i ruteberegning</span>
+          <span>Tillat ferger i dagens ruteberegning</span>
         </label>
 
         <div class="actions">
@@ -60,34 +60,59 @@
 
       <section class="results">
         <div class="result-card">
-          <span class="result-label">Kjoretid</span>
-          <strong id="duration-output">-</strong>
+          <span class="result-label">Dagens nett</span>
+          <strong id="current-duration-output">-</strong>
+          <small id="current-distance-output">-</small>
         </div>
-        <div class="result-card">
-          <span class="result-label">Distanse</span>
-          <strong id="distance-output">-</strong>
+        <div class="result-card future-card">
+          <span class="result-label">Framtidsnett</span>
+          <strong id="future-duration-output">-</strong>
+          <small id="future-distance-output">-</small>
         </div>
       </section>
 
       <section class="status-card">
         <h2>Status</h2>
-        <p id="status-output">Klar. Sok opp to adresser for a beregne en kjoretur.</p>
+        <p id="status-output">Klar. Sok opp to adresser for a beregne begge rutene.</p>
       </section>
 
       <section class="legend-card">
         <h2>Kartlag</h2>
         <label class="toggle">
-          <input id="nvdb-toggle" type="checkbox" checked>
+          <input id="roads-toggle" type="checkbox" checked>
           <span>Vis alle veier for Vestlandet</span>
         </label>
         <p class="legend-note">
-          Veglaget er delt opp i fliser og lastes inn etter hvert som du zoomer inn i kartet.
+          Hoyre kart viser ogsa de opplastede prosjektlinjene for Hordfast, Rogfast og
+          Bokn-Bomlafjorden.
         </p>
       </section>
     </aside>
 
-    <main class="map-wrap">
-      <div id="map" aria-label="Kart over Vestlandet"></div>
+    <main class="map-grid">
+      <section class="map-card">
+        <div class="map-card-header">
+          <div>
+            <p class="map-eyebrow">Dagens nett</p>
+            <h2>Eksisterende rute</h2>
+          </div>
+          <p class="map-copy">Samme logikk som dagens side, med valgfri fergebruk.</p>
+        </div>
+        <div id="current-map" class="map-frame" aria-label="Kart for dagens vegnett"></div>
+      </section>
+
+      <section class="map-card future-map-card">
+        <div class="map-card-header">
+          <div>
+            <p class="map-eyebrow">Framtidsnett</p>
+            <h2>Med Hordfast, Rogfast og Bokn-Bomlafjorden</h2>
+          </div>
+          <p class="map-copy">
+            Prosjektlinjene brukes som nye forbindelser, slik at ferjene de erstatter faller ut.
+          </p>
+        </div>
+        <div id="future-map" class="map-frame" aria-label="Kart for framtidig vegnett"></div>
+      </section>
     </main>
   </div>
 

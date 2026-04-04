@@ -3,38 +3,105 @@ const VESTLANDET_BOUNDS = L.latLngBounds(
   L.latLng(62.4, 8.9)
 );
 
-const map = L.map("map", {
-  zoomControl: true,
-  minZoom: 6
-}).fitBounds(VESTLANDET_BOUNDS, { padding: [20, 20] });
-
-L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-  attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-}).addTo(map);
+const PROJECT_SPECS = [
+  {
+    id: "hordfast",
+    name: "Hordfast",
+    file: "./hordfast_simplified.geojson",
+    color: "#7c3aed",
+    northPortal: { lon: 5.44045, lat: 60.20445 },
+    southPortal: { lon: 5.49657, lat: 59.79889 }
+  },
+  {
+    id: "bokn-bomlafjorden",
+    name: "Bokn-Bomlafjorden",
+    file: "./e39_bokn_bomlafjorden_alt1_simplified.geojson",
+    color: "#d97706",
+    northPortal: { lon: 5.488, lat: 59.704 },
+    southPortal: { lon: 5.443, lat: 59.1845 }
+  },
+  {
+    id: "rogfast",
+    name: "Rogfast",
+    file: "./e39_rogfast_approx.geojson",
+    color: "#1d4ed8",
+    routeFeatureIds: [
+      "rogfast_bokn_surface_road_approx",
+      "rogfast_main_tunnel_approx"
+    ],
+    northPortal: { lon: 5.456, lat: 59.207 },
+    southPortal: { lon: 5.6358, lat: 59.01191 }
+  }
+];
 
 const routeForm = document.getElementById("route-form");
 const fromInput = document.getElementById("from-input");
 const toInput = document.getElementById("to-input");
 const submitButton = document.getElementById("submit-button");
 const swapButton = document.getElementById("swap-button");
-const durationOutput = document.getElementById("duration-output");
-const distanceOutput = document.getElementById("distance-output");
+const currentDurationOutput = document.getElementById("current-duration-output");
+const currentDistanceOutput = document.getElementById("current-distance-output");
+const futureDurationOutput = document.getElementById("future-duration-output");
+const futureDistanceOutput = document.getElementById("future-distance-output");
 const statusOutput = document.getElementById("status-output");
-const nvdbToggle = document.getElementById("nvdb-toggle");
+const roadsToggle = document.getElementById("roads-toggle");
 const ferryToggle = document.getElementById("ferry-toggle");
 
-const markers = {
-  from: null,
-  to: null
+const currentMap = createMap("current-map");
+const futureMap = createMap("future-map");
+
+syncMaps(currentMap, futureMap);
+
+const roadTileManifestPromise = fetchJson("./data/vestlandet-road-tiles.json");
+const roadTileDataCache = new Map();
+const roadTileLayerStores = {
+  current: new Map(),
+  future: new Map()
 };
 
-let routeLine = null;
-const roadTileLayers = new Map();
-let roadTileManifest = null;
-let manifestPromise = null;
+const projectDataPromise = Promise.all(PROJECT_SPECS.map(loadProjectSpec));
 
-const markerIcon = (label) =>
-  L.divIcon({
+const currentMarkers = { from: null, to: null };
+const futureMarkers = { from: null, to: null };
+
+let currentRouteLine = null;
+let futureRouteLine = null;
+let projectLayersAdded = false;
+
+function createMap(elementId) {
+  const map = L.map(elementId, {
+    zoomControl: true,
+    minZoom: 6
+  }).fitBounds(VESTLANDET_BOUNDS, { padding: [20, 20] });
+
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+  }).addTo(map);
+
+  return map;
+}
+
+function syncMaps(mapA, mapB) {
+  let isSyncing = false;
+
+  function bind(source, target) {
+    source.on("move", () => {
+      if (isSyncing) {
+        return;
+      }
+
+      isSyncing = true;
+      target.setView(source.getCenter(), source.getZoom(), { animate: false });
+      isSyncing = false;
+    });
+  }
+
+  bind(mapA, mapB);
+  bind(mapB, mapA);
+}
+
+function markerIcon(label, color) {
+  return L.divIcon({
     className: "custom-marker",
     html: `<div style="
       width:34px;
@@ -42,7 +109,7 @@ const markerIcon = (label) =>
       border-radius:50%;
       display:grid;
       place-items:center;
-      background:${label === "A" ? "#0f766e" : "#f97316"};
+      background:${color};
       color:white;
       font-weight:700;
       border:3px solid rgba(255,255,255,0.9);
@@ -51,6 +118,7 @@ const markerIcon = (label) =>
     iconSize: [34, 34],
     iconAnchor: [17, 17]
   });
+}
 
 function setStatus(message) {
   statusOutput.textContent = message;
@@ -67,7 +135,7 @@ function formatDuration(seconds) {
   const minutes = totalMinutes % 60;
 
   if (!hours) {
-    return `${minutes} min`;
+    return `${totalMinutes} min`;
   }
 
   if (!minutes) {
@@ -83,6 +151,20 @@ function formatDistance(meters) {
   }
 
   return `${(meters / 1000).toFixed(1).replace(".", ",")} km`;
+}
+
+async function fetchJson(path) {
+  const response = await fetch(path, {
+    headers: {
+      Accept: "application/json,application/geo+json"
+    }
+  });
+
+  if (!response.ok) {
+    throw new Error(`Kunne ikke laste ${path} (${response.status}).`);
+  }
+
+  return response.json();
 }
 
 async function geocodeAddress(query) {
@@ -114,7 +196,7 @@ async function geocodeAddress(query) {
   };
 }
 
-async function fetchRoute(from, to) {
+async function fetchValhallaRoute(from, to, allowFerries = true) {
   const response = await fetch("https://valhalla1.openstreetmap.de/route", {
     method: "POST",
     headers: {
@@ -129,8 +211,8 @@ async function fetchRoute(from, to) {
       costing: "auto",
       costing_options: {
         auto: {
-          use_ferry: ferryToggle.checked ? 1.0 : 0.0,
-          exclude_ferry: !ferryToggle.checked
+          use_ferry: allowFerries ? 1.0 : 0.0,
+          exclude_ferry: !allowFerries
         }
       },
       directions_options: {
@@ -195,88 +277,37 @@ function decodePolyline(encoded, precision = 6) {
   };
 }
 
-function updateMarker(key, latlng, label, popupText) {
-  if (markers[key]) {
-    markers[key].setLatLng(latlng);
-    markers[key].setPopupContent(`<div class="route-popup">${popupText}</div>`);
+function routeGeometry(route) {
+  return typeof route.geometry === "string"
+    ? decodePolyline(route.geometry, 6)
+    : route.geometry;
+}
+
+function updateMarker(markerStore, map, key, latlng, label, popupText, color) {
+  if (markerStore[key]) {
+    markerStore[key].setLatLng(latlng);
+    markerStore[key].setPopupContent(`<div class="route-popup">${popupText}</div>`);
     return;
   }
 
-  markers[key] = L.marker(latlng, {
-    icon: markerIcon(label)
+  markerStore[key] = L.marker(latlng, {
+    icon: markerIcon(label, color)
   })
     .addTo(map)
     .bindPopup(`<div class="route-popup">${popupText}</div>`);
 }
 
-function clearRoute() {
-  if (routeLine) {
-    map.removeLayer(routeLine);
-    routeLine = null;
+function removeLayerIfExists(map, layer) {
+  if (layer && map.hasLayer(layer)) {
+    map.removeLayer(layer);
   }
 }
 
-async function handleRouteSubmit(event) {
-  event.preventDefault();
-
-  const fromText = fromInput.value.trim();
-  const toText = toInput.value.trim();
-
-  if (!fromText || !toText) {
-    setStatus("Fyll inn bade fra- og til-adresse.");
-    return;
-  }
-
-  try {
-    setBusy(true);
-    setStatus(
-      ferryToggle.checked
-        ? "Soker opp adresser og beregner rute med ferger tillatt..."
-        : "Soker opp adresser og beregner rute uten ferger..."
-    );
-    clearRoute();
-
-    const [from, to] = await Promise.all([geocodeAddress(fromText), geocodeAddress(toText)]);
-
-    updateMarker("from", [from.lat, from.lon], "A", from.label);
-    updateMarker("to", [to.lat, to.lon], "B", to.label);
-
-    const route = await fetchRoute(from, to);
-
-    const routeGeometry =
-      typeof route.geometry === "string"
-        ? decodePolyline(route.geometry, 6)
-        : route.geometry;
-
-    routeLine = L.geoJSON(routeGeometry, {
-      style: {
-        color: "#f97316",
-        weight: 6,
-        opacity: 0.9
-      }
-    }).addTo(map);
-
-    durationOutput.textContent = formatDuration(route.duration);
-    distanceOutput.textContent = formatDistance(route.distance);
-    setStatus("Ruten er klar.");
-
-    const routeBounds = routeLine.getBounds();
-    if (routeBounds.isValid()) {
-      map.fitBounds(routeBounds.pad(0.2));
-    }
-  } catch (error) {
-    durationOutput.textContent = "-";
-    distanceOutput.textContent = "-";
-    setStatus(error.message);
-  } finally {
-    setBusy(false);
-  }
-}
-
-function swapAddresses() {
-  const currentFrom = fromInput.value;
-  fromInput.value = toInput.value;
-  toInput.value = currentFrom;
+function clearRoutes() {
+  removeLayerIfExists(currentMap, currentRouteLine);
+  removeLayerIfExists(futureMap, futureRouteLine);
+  currentRouteLine = null;
+  futureRouteLine = null;
 }
 
 function roadWeight(highway) {
@@ -332,79 +363,323 @@ function intersectsBbox(bounds, bbox) {
   );
 }
 
-async function loadRoadManifest() {
-  if (roadTileManifest) {
-    return roadTileManifest;
-  }
+async function ensureRoadTiles(mapName, mapInstance) {
+  const store = roadTileLayerStores[mapName];
 
-  if (!manifestPromise) {
-    manifestPromise = fetch("./data/vestlandet-road-tiles.json", {
-      headers: {
-        Accept: "application/json"
-      }
-    }).then(async (response) => {
-      if (!response.ok) {
-        throw new Error(`Vegmanifest svarte med status ${response.status}.`);
-      }
-
-      roadTileManifest = await response.json();
-      return roadTileManifest;
-    });
-  }
-
-  return manifestPromise;
-}
-
-async function loadRoadTile(tile) {
-  if (roadTileLayers.has(tile.id)) {
-    return roadTileLayers.get(tile.id);
-  }
-
-  const response = await fetch(`./${tile.file}`, {
-    headers: {
-      Accept: "application/geo+json,application/json"
-    }
-  });
-
-  if (!response.ok) {
-    throw new Error(`Vegflis ${tile.id} svarte med status ${response.status}.`);
-  }
-
-  const data = await response.json();
-  const layer = createRoadLayer(data);
-  roadTileLayers.set(tile.id, layer);
-  return layer;
-}
-
-async function loadNvdbRoads() {
-  if (!nvdbToggle.checked) {
-    roadTileLayers.forEach((layer) => map.removeLayer(layer));
+  if (!roadsToggle.checked || mapInstance.getZoom() < 9) {
+    store.forEach((layer) => removeLayerIfExists(mapInstance, layer));
     return;
   }
 
-  if (map.getZoom() < 9) {
-    roadTileLayers.forEach((layer) => map.removeLayer(layer));
-    setStatus("Zoom inn for a vise alle vegene i omradet.");
+  const manifest = await roadTileManifestPromise;
+  const visibleTiles = manifest.filter((tile) => intersectsBbox(mapInstance.getBounds(), tile.bbox));
+  const visibleIds = new Set(visibleTiles.map((tile) => tile.id));
+
+  store.forEach((layer, tileId) => {
+    if (!visibleIds.has(tileId)) {
+      removeLayerIfExists(mapInstance, layer);
+    }
+  });
+
+  for (const tile of visibleTiles) {
+    let data = roadTileDataCache.get(tile.id);
+    if (!data) {
+      data = await fetchJson(`./${tile.file}`);
+      roadTileDataCache.set(tile.id, data);
+    }
+
+    let layer = store.get(tile.id);
+    if (!layer) {
+      layer = createRoadLayer(data);
+      store.set(tile.id, layer);
+    }
+
+    if (!mapInstance.hasLayer(layer)) {
+      layer.addTo(mapInstance);
+    }
+  }
+}
+
+function flattenProjectCoordinates(geojson, spec) {
+  const coordinates = [];
+  const routeFeatureIds = spec.routeFeatureIds || null;
+
+  for (const feature of geojson.features || []) {
+    const geometry = feature.geometry;
+    const featureId = feature?.properties?.id || null;
+
+    if (routeFeatureIds && !routeFeatureIds.includes(featureId)) {
+      continue;
+    }
+
+    if (!geometry) {
+      continue;
+    }
+
+    if (geometry.type === "LineString") {
+      coordinates.push(...geometry.coordinates);
+    }
+
+    if (geometry.type === "MultiLineString") {
+      geometry.coordinates.forEach((segment) => coordinates.push(...segment));
+    }
+  }
+
+  return coordinates;
+}
+
+function coordinatesToGeometry(coordinates) {
+  return {
+    type: "LineString",
+    coordinates
+  };
+}
+
+function reverseGeometry(geometry) {
+  return {
+    type: "LineString",
+    coordinates: [...geometry.coordinates].reverse()
+  };
+}
+
+function geometryLengthMeters(geometry) {
+  let total = 0;
+
+  for (let i = 1; i < geometry.coordinates.length; i += 1) {
+    const [lonA, latA] = geometry.coordinates[i - 1];
+    const [lonB, latB] = geometry.coordinates[i];
+    total += L.latLng(latA, lonA).distanceTo(L.latLng(latB, lonB));
+  }
+
+  return total;
+}
+
+function combineLineStrings(segments) {
+  const coordinates = [];
+
+  segments.forEach((segment, segmentIndex) => {
+    segment.coordinates.forEach((coordinate, coordinateIndex) => {
+      if (segmentIndex > 0 && coordinateIndex === 0) {
+        const previous = coordinates[coordinates.length - 1];
+        if (previous && previous[0] === coordinate[0] && previous[1] === coordinate[1]) {
+          return;
+        }
+      }
+
+      coordinates.push(coordinate);
+    });
+  });
+
+  return {
+    type: "LineString",
+    coordinates
+  };
+}
+
+function approximateProjectDurationSeconds(geometry) {
+  const meters = geometryLengthMeters(geometry);
+  const speedMetersPerSecond = 100 / 3.6;
+  return meters / speedMetersPerSecond;
+}
+
+async function loadProjectSpec(spec) {
+  const geojson = await fetchJson(spec.file);
+  const coordinates = flattenProjectCoordinates(geojson, spec);
+  const geometry = coordinatesToGeometry(coordinates);
+
+  return {
+    ...spec,
+    geojson,
+    geometry,
+    bbox: L.geoJSON(geojson).getBounds()
+  };
+}
+
+function addProjectLayers(mapInstance, projects) {
+  if (projectLayersAdded) {
+    return;
+  }
+
+  projects.forEach((project) => {
+    const layer = L.geoJSON(project.geojson, {
+      style(feature) {
+        const medium = feature?.properties?.Medium || feature?.properties?.feature_type || "";
+        const dashArray = /Tunnel|tunnel/i.test(medium) ? "8 8" : null;
+
+        return {
+          color: project.color,
+          weight: 5,
+          opacity: 0.88,
+          dashArray
+        };
+      },
+      pointToLayer(feature, latlng) {
+        return L.circleMarker(latlng, {
+          radius: 6,
+          color: project.color,
+          fillColor: project.color,
+          fillOpacity: 0.9,
+          weight: 2
+        });
+      }
+    });
+
+    layer.addTo(futureMap);
+  });
+
+  projectLayersAdded = true;
+}
+
+function shouldUseProject(project, from, to) {
+  const maxLat = Math.max(from.lat, to.lat);
+  const minLat = Math.min(from.lat, to.lat);
+  const maxLon = Math.max(from.lon, to.lon);
+  const minLon = Math.min(from.lon, to.lon);
+  const projectNorth = Math.max(project.northPortal.lat, project.southPortal.lat);
+  const projectSouth = Math.min(project.northPortal.lat, project.southPortal.lat);
+  const bounds = project.bbox.pad(1.2);
+
+  const crossesLatitudeBand = maxLat >= projectSouth && minLat <= projectNorth;
+  const touchesWestCorridor = minLon <= bounds.getEast() && maxLon >= bounds.getWest();
+
+  return crossesLatitudeBand && touchesWestCorridor;
+}
+
+async function buildFutureRoute(from, to, projects) {
+  const northToSouth = from.lat >= to.lat;
+  const orderedProjects = northToSouth ? projects : [...projects].reverse();
+  const selectedProjects = orderedProjects.filter((project) => shouldUseProject(project, from, to));
+
+  if (!selectedProjects.length) {
+    const route = await fetchValhallaRoute(from, to, false);
+    return {
+      geometry: routeGeometry(route),
+      duration: route.duration,
+      distance: route.distance
+    };
+  }
+
+  const segments = [];
+  let totalDuration = 0;
+  let totalDistance = 0;
+  let currentPoint = { lon: from.lon, lat: from.lat };
+
+  for (const project of selectedProjects) {
+    const entryPoint = northToSouth ? project.northPortal : project.southPortal;
+    const exitPoint = northToSouth ? project.southPortal : project.northPortal;
+    const projectGeometry = northToSouth ? reverseGeometry(project.geometry) : project.geometry;
+
+    const connectorToProject = await fetchValhallaRoute(currentPoint, entryPoint, false);
+    const connectorGeometry = routeGeometry(connectorToProject);
+    segments.push(connectorGeometry);
+    totalDuration += connectorToProject.duration;
+    totalDistance += connectorToProject.distance;
+
+    segments.push(projectGeometry);
+    totalDuration += approximateProjectDurationSeconds(projectGeometry);
+    totalDistance += geometryLengthMeters(projectGeometry);
+
+    currentPoint = exitPoint;
+  }
+
+  const connectorToDestination = await fetchValhallaRoute(currentPoint, to, false);
+  segments.push(routeGeometry(connectorToDestination));
+  totalDuration += connectorToDestination.duration;
+  totalDistance += connectorToDestination.distance;
+
+  return {
+    geometry: combineLineStrings(segments),
+    duration: totalDuration,
+    distance: totalDistance
+  };
+}
+
+function drawRoute(mapInstance, geometry, color) {
+  return L.geoJSON(geometry, {
+    style: {
+      color,
+      weight: 6,
+      opacity: 0.9
+    }
+  }).addTo(mapInstance);
+}
+
+function fitBothMaps(currentLayer, futureLayer) {
+  const group = L.featureGroup([currentLayer, futureLayer]);
+  const bounds = group.getBounds();
+
+  if (bounds.isValid()) {
+    currentMap.fitBounds(bounds.pad(0.12));
+  }
+}
+
+async function handleRouteSubmit(event) {
+  event.preventDefault();
+
+  const fromText = fromInput.value.trim();
+  const toText = toInput.value.trim();
+
+  if (!fromText || !toText) {
+    setStatus("Fyll inn bade fra- og til-adresse.");
     return;
   }
 
   try {
-    const manifest = await loadRoadManifest();
-    const visibleTiles = manifest.filter((tile) => intersectsBbox(map.getBounds(), tile.bbox));
-    const visibleTileIds = new Set(visibleTiles.map((tile) => tile.id));
+    setBusy(true);
+    setStatus("Soker opp adresser og beregner dagens og framtidige ruter...");
+    clearRoutes();
 
-    roadTileLayers.forEach((layer, tileId) => {
-      if (!visibleTileIds.has(tileId) && map.hasLayer(layer)) {
-        map.removeLayer(layer);
-      }
-    });
+    const [from, to, projects] = await Promise.all([
+      geocodeAddress(fromText),
+      geocodeAddress(toText),
+      projectDataPromise
+    ]);
 
-    for (const tile of visibleTiles) {
-      const layer = await loadRoadTile(tile);
-      if (!map.hasLayer(layer)) {
-        layer.addTo(map);
-      }
-    }
+    addProjectLayers(futureMap, projects);
+
+    updateMarker(currentMarkers, currentMap, "from", [from.lat, from.lon], "A", from.label, "#0f766e");
+    updateMarker(currentMarkers, currentMap, "to", [to.lat, to.lon], "B", to.label, "#f97316");
+    updateMarker(futureMarkers, futureMap, "from", [from.lat, from.lon], "A", from.label, "#0f766e");
+    updateMarker(futureMarkers, futureMap, "to", [to.lat, to.lon], "B", to.label, "#f97316");
+
+    const [currentRoute, futureRoute] = await Promise.all([
+      fetchValhallaRoute(from, to, ferryToggle.checked),
+      buildFutureRoute(from, to, projects)
+    ]);
+
+    currentRouteLine = drawRoute(currentMap, routeGeometry(currentRoute), "#f97316");
+    futureRouteLine = drawRoute(futureMap, futureRoute.geometry, "#1d4ed8");
+
+    currentDurationOutput.textContent = formatDuration(currentRoute.duration);
+    currentDistanceOutput.textContent = formatDistance(currentRoute.distance);
+    futureDurationOutput.textContent = formatDuration(futureRoute.duration);
+    futureDistanceOutput.textContent = formatDistance(futureRoute.distance);
+
+    fitBothMaps(currentRouteLine, futureRouteLine);
+    setStatus("Begge kartene er oppdatert. Hoyre kart bruker de opplastede prosjektlinjene som nye forbindelser.");
+  } catch (error) {
+    currentDurationOutput.textContent = "-";
+    currentDistanceOutput.textContent = "-";
+    futureDurationOutput.textContent = "-";
+    futureDistanceOutput.textContent = "-";
+    setStatus(error.message);
+  } finally {
+    setBusy(false);
+  }
+}
+
+function swapAddresses() {
+  const currentFrom = fromInput.value;
+  fromInput.value = toInput.value;
+  toInput.value = currentFrom;
+}
+
+async function refreshRoadLayers() {
+  try {
+    await Promise.all([
+      ensureRoadTiles("current", currentMap),
+      ensureRoadTiles("future", futureMap)
+    ]);
   } catch (error) {
     setStatus(`Kunne ikke laste veglaget akkurat na. ${error.message}`);
   }
@@ -412,6 +687,8 @@ async function loadNvdbRoads() {
 
 routeForm.addEventListener("submit", handleRouteSubmit);
 swapButton.addEventListener("click", swapAddresses);
-nvdbToggle.addEventListener("change", loadNvdbRoads);
-map.on("moveend", loadNvdbRoads);
-loadNvdbRoads();
+roadsToggle.addEventListener("change", refreshRoadLayers);
+currentMap.on("moveend", refreshRoadLayers);
+futureMap.on("moveend", refreshRoadLayers);
+
+refreshRoadLayers();
