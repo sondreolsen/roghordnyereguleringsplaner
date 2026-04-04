@@ -53,6 +53,24 @@ const PROJECT_SPECS = [
   }
 ];
 
+const PROJECT_LINK_SPECS = [
+  {
+    fromId: "hordfast",
+    toId: "bokn-bomlafjorden",
+    speedKph: 110,
+    geometry: {
+      type: "LineString",
+      coordinates: [
+        [5.49657, 59.79889],
+        [5.4945, 59.775],
+        [5.4925, 59.75],
+        [5.4905, 59.726],
+        [5.488, 59.704]
+      ]
+    }
+  }
+];
+
 const routeForm = document.getElementById("route-form");
 const fromInput = document.getElementById("from-input");
 const toInput = document.getElementById("to-input");
@@ -505,6 +523,32 @@ function reverseGeometry(geometry) {
   };
 }
 
+function findProjectLink(fromProjectId, toProjectId, northToSouth) {
+  const directLink = PROJECT_LINK_SPECS.find(
+    (link) => link.fromId === fromProjectId && link.toId === toProjectId
+  );
+
+  if (directLink) {
+    return {
+      geometry: northToSouth ? directLink.geometry : reverseGeometry(directLink.geometry),
+      speedKph: directLink.speedKph
+    };
+  }
+
+  const reverseLink = PROJECT_LINK_SPECS.find(
+    (link) => link.fromId === toProjectId && link.toId === fromProjectId
+  );
+
+  if (!reverseLink) {
+    return null;
+  }
+
+  return {
+    geometry: northToSouth ? reverseGeometry(reverseLink.geometry) : reverseLink.geometry,
+    speedKph: reverseLink.speedKph
+  };
+}
+
 function geometryLengthMeters(geometry) {
   let total = 0;
 
@@ -591,16 +635,27 @@ async function buildFutureRoute(from, to, projects) {
   let currentPoint = { lon: from.lon, lat: from.lat };
 
   try {
-    for (const project of selectedProjects) {
+    for (let index = 0; index < selectedProjects.length; index += 1) {
+      const project = selectedProjects[index];
       const entryPoint = northToSouth ? project.northPortal : project.southPortal;
       const exitPoint = northToSouth ? project.southPortal : project.northPortal;
       const projectGeometry = northToSouth ? reverseGeometry(project.geometry) : project.geometry;
+      const previousProject = index > 0 ? selectedProjects[index - 1] : null;
+      const projectLink = previousProject
+        ? findProjectLink(previousProject.id, project.id, northToSouth)
+        : null;
 
-      const connectorToProject = await fetchRouteWithRetry(currentPoint, entryPoint, false);
-      const connectorGeometry = routeGeometry(connectorToProject);
-      segments.push(connectorGeometry);
-      totalDuration += connectorToProject.duration;
-      totalDistance += connectorToProject.distance;
+      if (projectLink) {
+        segments.push(projectLink.geometry);
+        totalDuration += approximateProjectDurationSeconds(projectLink.geometry, projectLink.speedKph);
+        totalDistance += geometryLengthMeters(projectLink.geometry);
+      } else {
+        const connectorToProject = await fetchRouteWithRetry(currentPoint, entryPoint, false);
+        const connectorGeometry = routeGeometry(connectorToProject);
+        segments.push(connectorGeometry);
+        totalDuration += connectorToProject.duration;
+        totalDistance += connectorToProject.distance;
+      }
 
       segments.push(projectGeometry);
       totalDuration += approximateProjectDurationSeconds(projectGeometry, project.speedKph);
