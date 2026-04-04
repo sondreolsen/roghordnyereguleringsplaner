@@ -10,6 +10,7 @@ const PROJECT_SPECS = [
     file: "./hordfast_simplified.geojson",
     color: "#7c3aed",
     speedKph: 110,
+    routeObjectIds: [1, 2, 3, 4, 5, 6, 8, 7, 9, 10, 11, 12, 13, 14, 15, 16],
     northPortal: { lon: 5.44045, lat: 60.20445 },
     southPortal: { lon: 5.49657, lat: 59.79889 },
     corridor: {
@@ -443,12 +444,34 @@ async function ensureRoadTiles(mapName, mapInstance) {
 function flattenProjectCoordinates(geojson, spec) {
   const coordinates = [];
   const routeFeatureIds = spec.routeFeatureIds || null;
+  const routeObjectIds = spec.routeObjectIds || null;
+  const orderLookup = routeObjectIds
+    ? new Map(routeObjectIds.map((objectId, index) => [objectId, index]))
+    : null;
+  const features = [...(geojson.features || [])];
 
-  for (const feature of geojson.features || []) {
+  if (routeObjectIds) {
+    features.sort((featureA, featureB) => {
+      const indexA = orderLookup.has(featureA?.properties?.OBJECTID)
+        ? orderLookup.get(featureA.properties.OBJECTID)
+        : Number.MAX_SAFE_INTEGER;
+      const indexB = orderLookup.has(featureB?.properties?.OBJECTID)
+        ? orderLookup.get(featureB.properties.OBJECTID)
+        : Number.MAX_SAFE_INTEGER;
+      return indexA - indexB;
+    });
+  }
+
+  for (const feature of features) {
     const geometry = feature.geometry;
     const featureId = feature?.properties?.id || null;
+    const objectId = feature?.properties?.OBJECTID || null;
 
     if (routeFeatureIds && !routeFeatureIds.includes(featureId)) {
+      continue;
+    }
+
+    if (routeObjectIds && !routeObjectIds.includes(objectId)) {
       continue;
     }
 
