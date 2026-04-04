@@ -35,8 +35,7 @@ let nvdbLayer = L.geoJSON([], {
     opacity: 0.55
   }
 }).addTo(map);
-let currentNvdbController = null;
-let hasLoadedNvdb = false;
+let hasLoadedRoadOverlay = false;
 
 const markerIcon = (label) =>
   L.divIcon({
@@ -312,52 +311,31 @@ function toGeoJsonFeatures(segment) {
 async function loadNvdbRoads() {
   if (!nvdbToggle.checked) {
     nvdbLayer.clearLayers();
-    hasLoadedNvdb = false;
+    hasLoadedRoadOverlay = false;
     return;
   }
 
-  if (hasLoadedNvdb) {
+  if (hasLoadedRoadOverlay) {
     return;
   }
-
-  const url = new URL("https://nvdbapiles.atlas.vegvesen.no/vegnett/api/v4/veglenkesekvenser");
-  url.searchParams.set("fylke", "46,11");
-  url.searchParams.set("srid", "4326");
-  url.searchParams.set("antall", "800");
-  url.searchParams.set("sortert", "false");
-  url.searchParams.set("inkluderAntall", "false");
-
-  if (currentNvdbController) {
-    currentNvdbController.abort();
-  }
-
-  currentNvdbController = new AbortController();
 
   try {
-    const response = await fetch(url, {
-      signal: currentNvdbController.signal,
+    const response = await fetch("./data/vestlandet-roads.geojson", {
       headers: {
-        Accept: "application/json"
+        Accept: "application/geo+json,application/json"
       }
     });
 
     if (!response.ok) {
-      throw new Error(`NVDB svarte med status ${response.status}.`);
+      throw new Error(`Veglaget svarte med status ${response.status}.`);
     }
 
     const data = await response.json();
-    const segments = Array.isArray(data) ? data : data.objekter || [];
-    const features = segments.flatMap(toGeoJsonFeatures);
-
     nvdbLayer.clearLayers();
-    nvdbLayer.addData(features);
-    hasLoadedNvdb = true;
+    nvdbLayer.addData(data);
+    hasLoadedRoadOverlay = true;
   } catch (error) {
-    if (error.name === "AbortError") {
-      return;
-    }
-
-    setStatus(`Kunne ikke laste NVDB-vegnett akkurat na. ${error.message}`);
+    setStatus(`Kunne ikke laste veglaget akkurat na. ${error.message}`);
   }
 }
 

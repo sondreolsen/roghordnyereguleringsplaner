@@ -4,13 +4,14 @@ En liten statisk webapp som lar deg:
 
 - skrive inn fra- og til-adresse
 - beregne kjorerute, distanse og estimert kjoretid
-- vise NVDB-vegnett for Vestlandet som eget kartlag
+- vise et forenklet hovedvegkart for Vestlandet som eget kartlag
 
 ## Filer
 
 - `index.html` setter opp grensesnittet
 - `styles.css` styrer utseendet
-- `app.js` handterer kart, adresseoppslag, rute og NVDB-data
+- `app.js` handterer kart, adresseoppslag, rute og veglag
+- `data/vestlandet-roads.geojson` inneholder et lettvekts veglag for kartet
 
 ## Slik starter du lokalt
 
@@ -31,11 +32,11 @@ http://localhost:8000
 - Kartbakgrunn: OpenStreetMap
 - Adresseoppslag: Nominatim
 - Ruteberegning: OSRM demo-server
-- Vegnettlag: Statens vegvesen NVDB API Les V4
+- Veglag: lokal GeoJSON-fil i repoet
 
 ## Merknad
 
-NVDB-laget lastes for kartutsnittet du ser pa. Det gjor at losningen er lettere enn a laste hele Vestlandet pa en gang.
+Veglaget lastes fra repoet i stedet for et eksternt API. Det gjor siden mer stabil pa GitHub Pages.
 
 ## GitHub Pages
 
