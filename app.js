@@ -10,7 +10,12 @@ const PROJECT_SPECS = [
     file: "./hordfast_simplified.geojson",
     color: "#7c3aed",
     northPortal: { lon: 5.44045, lat: 60.20445 },
-    southPortal: { lon: 5.49657, lat: 59.79889 }
+    southPortal: { lon: 5.49657, lat: 59.79889 },
+    corridor: {
+      northMinLat: 60.0,
+      southMaxLat: 60.0,
+      westMaxLon: 6.2
+    }
   },
   {
     id: "bokn-bomlafjorden",
@@ -18,7 +23,12 @@ const PROJECT_SPECS = [
     file: "./e39_bokn_bomlafjorden_alt1_simplified.geojson",
     color: "#d97706",
     northPortal: { lon: 5.488, lat: 59.704 },
-    southPortal: { lon: 5.443, lat: 59.1845 }
+    southPortal: { lon: 5.443, lat: 59.1845 },
+    corridor: {
+      northMinLat: 59.55,
+      southMaxLat: 59.35,
+      westMaxLon: 6.1
+    }
   },
   {
     id: "rogfast",
@@ -30,7 +40,12 @@ const PROJECT_SPECS = [
       "rogfast_main_tunnel_approx"
     ],
     northPortal: { lon: 5.456, lat: 59.207 },
-    southPortal: { lon: 5.6358, lat: 59.01191 }
+    southPortal: { lon: 5.6358, lat: 59.01191 },
+    corridor: {
+      northMinLat: 59.1,
+      southMaxLat: 59.08,
+      westMaxLon: 6.0
+    }
   }
 ];
 
@@ -66,8 +81,6 @@ const futureMarkers = { from: null, to: null };
 
 let currentRouteLine = null;
 let futureRouteLine = null;
-let projectLayersAdded = false;
-
 function createMap(elementId) {
   const map = L.map(elementId, {
     zoomControl: true,
@@ -495,54 +508,17 @@ async function loadProjectSpec(spec) {
   };
 }
 
-function addProjectLayers(mapInstance, projects) {
-  if (projectLayersAdded) {
-    return;
-  }
-
-  projects.forEach((project) => {
-    const layer = L.geoJSON(project.geojson, {
-      style(feature) {
-        const medium = feature?.properties?.Medium || feature?.properties?.feature_type || "";
-        const dashArray = /Tunnel|tunnel/i.test(medium) ? "8 8" : null;
-
-        return {
-          color: project.color,
-          weight: 5,
-          opacity: 0.88,
-          dashArray
-        };
-      },
-      pointToLayer(feature, latlng) {
-        return L.circleMarker(latlng, {
-          radius: 6,
-          color: project.color,
-          fillColor: project.color,
-          fillOpacity: 0.9,
-          weight: 2
-        });
-      }
-    });
-
-    layer.addTo(futureMap);
-  });
-
-  projectLayersAdded = true;
-}
-
 function shouldUseProject(project, from, to) {
-  const maxLat = Math.max(from.lat, to.lat);
-  const minLat = Math.min(from.lat, to.lat);
-  const maxLon = Math.max(from.lon, to.lon);
-  const minLon = Math.min(from.lon, to.lon);
-  const projectNorth = Math.max(project.northPortal.lat, project.southPortal.lat);
-  const projectSouth = Math.min(project.northPortal.lat, project.southPortal.lat);
-  const bounds = project.bbox.pad(1.2);
+  const northLat = Math.max(from.lat, to.lat);
+  const southLat = Math.min(from.lat, to.lat);
+  const westLon = Math.min(from.lon, to.lon);
+  const corridor = project.corridor;
 
-  const crossesLatitudeBand = maxLat >= projectSouth && minLat <= projectNorth;
-  const touchesWestCorridor = minLon <= bounds.getEast() && maxLon >= bounds.getWest();
-
-  return crossesLatitudeBand && touchesWestCorridor;
+  return (
+    northLat >= corridor.northMinLat &&
+    southLat <= corridor.southMaxLat &&
+    westLon <= corridor.westMaxLon
+  );
 }
 
 async function buildFutureRoute(from, to, projects) {
@@ -634,8 +610,6 @@ async function handleRouteSubmit(event) {
       geocodeAddress(toText),
       projectDataPromise
     ]);
-
-    addProjectLayers(futureMap, projects);
 
     updateMarker(currentMarkers, currentMap, "from", [from.lat, from.lon], "A", from.label, "#0f766e");
     updateMarker(currentMarkers, currentMap, "to", [to.lat, to.lon], "B", to.label, "#f97316");

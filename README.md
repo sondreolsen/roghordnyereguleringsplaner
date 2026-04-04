@@ -38,7 +38,7 @@ http://localhost:8000
 - Adresseoppslag: Nominatim
 - Ruteberegning: Valhalla public demo
 - Veglag: lokale GeoJSON-fliser generert fra OpenStreetMap-data
-- Framtidskart: lokale prosjektlinjer lagt oppa vegnettet og brukt som nye forbindelser i hoyre kart
+- Framtidskart: lokale prosjektlinjer brukt i rutelogikken for hoyre kart, uten egne tydelige overlay-lag
 
 ## Merknad
 
