@@ -1,0 +1,101 @@
+[
+    {
+        "id":  "tile-01",
+        "file":  "data/road-tiles/tile-01.geojson",
+        "bbox":  [
+                     57.7,
+                     4,
+                     59.3,
+                     5.6
+                 ],
+        "featureCount":  -1
+    },
+    {
+        "id":  "tile-02",
+        "file":  "data/road-tiles/tile-02.geojson",
+        "bbox":  [
+                     57.7,
+                     5.6,
+                     59.3,
+                     7.2
+                 ],
+        "featureCount":  -1
+    },
+    {
+        "id":  "tile-03",
+        "file":  "data/road-tiles/tile-03.geojson",
+        "bbox":  [
+                     57.7,
+                     7.2,
+                     59.3,
+                     8.9
+                 ],
+        "featureCount":  -1
+    },
+    {
+        "id":  "tile-04",
+        "file":  "data/road-tiles/tile-04.geojson",
+        "bbox":  [
+                     59.3,
+                     4,
+                     60.9,
+                     5.6
+                 ],
+        "featureCount":  -1
+    },
+    {
+        "id":  "tile-05",
+        "file":  "data/road-tiles/tile-05.geojson",
+        "bbox":  [
+                     59.3,
+                     5.6,
+                     60.9,
+                     7.2
+                 ],
+        "featureCount":  -1
+    },
+    {
+        "id":  "tile-06",
+        "file":  "data/road-tiles/tile-06.geojson",
+        "bbox":  [
+                     59.3,
+                     7.2,
+                     60.9,
+                     8.9
+                 ],
+        "featureCount":  -1
+    },
+    {
+        "id":  "tile-07",
+        "file":  "data/road-tiles/tile-07.geojson",
+        "bbox":  [
+                     60.9,
+                     4,
+                     62.5,
+                     5.6
+                 ],
+        "featureCount":  -1
+    },
+    {
+        "id":  "tile-08",
+        "file":  "data/road-tiles/tile-08.geojson",
+        "bbox":  [
+                     60.9,
+                     5.6,
+                     62.5,
+                     7.2
+                 ],
+        "featureCount":  48474
+    },
+    {
+        "id":  "tile-09",
+        "file":  "data/road-tiles/tile-09.geojson",
+        "bbox":  [
+                     60.9,
+                     7.2,
+                     62.5,
+                     8.9
+                 ],
+        "featureCount":  -1
+    }
+]

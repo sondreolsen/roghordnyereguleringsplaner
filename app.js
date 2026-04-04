@@ -28,14 +28,9 @@ const markers = {
 };
 
 let routeLine = null;
-let nvdbLayer = L.geoJSON([], {
-  style: {
-    color: "#0f766e",
-    weight: 2,
-    opacity: 0.55
-  }
-}).addTo(map);
-let hasLoadedRoadOverlay = false;
+const roadTileLayers = new Map();
+let roadTileManifest = null;
+let manifestPromise = null;
 
 const markerIcon = (label) =>
   L.divIcon({
@@ -219,121 +214,132 @@ function swapAddresses() {
   toInput.value = currentFrom;
 }
 
-function parseWktLineString(wkt) {
-  if (!wkt || typeof wkt !== "string") {
-    return null;
+function roadWeight(highway) {
+  switch (highway) {
+    case "motorway":
+    case "trunk":
+      return 3;
+    case "primary":
+    case "secondary":
+      return 2.4;
+    case "tertiary":
+    case "unclassified":
+      return 1.8;
+    default:
+      return 1.1;
   }
-
-  const normalized = wkt.trim();
-  if (normalized.startsWith("LINESTRING")) {
-    return {
-      type: "LineString",
-      coordinates: extractLineCoordinates(normalized)
-    };
-  }
-
-  if (normalized.startsWith("MULTILINESTRING")) {
-    return {
-      type: "MultiLineString",
-      coordinates: extractMultiLineCoordinates(normalized)
-    };
-  }
-
-  return null;
 }
 
-function extractLineCoordinates(wkt) {
-  const raw = wkt.slice(wkt.indexOf("(") + 1, wkt.lastIndexOf(")"));
-  return raw
-    .split(",")
-    .map((point) => point.trim().split(/\s+/).map(Number))
-    .map(([lon, lat]) => [lon, lat])
-    .filter(([lon, lat]) => Number.isFinite(lon) && Number.isFinite(lat));
+function roadOpacity(highway) {
+  switch (highway) {
+    case "motorway":
+    case "trunk":
+    case "primary":
+      return 0.9;
+    case "secondary":
+    case "tertiary":
+      return 0.75;
+    default:
+      return 0.45;
+  }
 }
 
-function extractMultiLineCoordinates(wkt) {
-  const raw = wkt.slice(wkt.indexOf("((") + 2, wkt.lastIndexOf("))"));
-  return raw
-    .split("),(")
-    .map((segment) =>
-      segment
-        .split(",")
-        .map((point) => point.trim().split(/\s+/).map(Number))
-        .map(([lon, lat]) => [lon, lat])
-        .filter(([lon, lat]) => Number.isFinite(lon) && Number.isFinite(lat))
-    )
-    .filter((segment) => segment.length > 1);
-}
-
-function toGeoJsonFeatures(segment) {
-  if (segment?.geometri?.wkt) {
-    const geometry = parseWktLineString(segment.geometri.wkt);
-    if (!geometry || !geometry.coordinates.length) {
-      return [];
+function createRoadLayer(data) {
+  return L.geoJSON(data, {
+    style(feature) {
+      const highway = feature?.properties?.h || "service";
+      return {
+        color: "#0f766e",
+        weight: roadWeight(highway),
+        opacity: roadOpacity(highway)
+      };
     }
+  });
+}
 
-    return [{
-      type: "Feature",
-      properties: {
-        referanse: segment.referanse || segment.kortform || "Veglenke",
-        typeVeg: segment.typeVeg || "Ukjent vegtype"
-      },
-      geometry
-    }];
+function intersectsBbox(bounds, bbox) {
+  const [south, west, north, east] = bbox;
+  return !(
+    bounds.getNorth() < south ||
+    bounds.getSouth() > north ||
+    bounds.getEast() < west ||
+    bounds.getWest() > east
+  );
+}
+
+async function loadRoadManifest() {
+  if (roadTileManifest) {
+    return roadTileManifest;
   }
 
-  if (Array.isArray(segment?.veglenker)) {
-    return segment.veglenker
-      .map((veglenke) => {
-        const geometry = veglenke?.geometri?.wkt
-          ? parseWktLineString(veglenke.geometri.wkt)
-          : null;
+  if (!manifestPromise) {
+    manifestPromise = fetch("./data/vestlandet-road-tiles.json", {
+      headers: {
+        Accept: "application/json"
+      }
+    }).then(async (response) => {
+      if (!response.ok) {
+        throw new Error(`Vegmanifest svarte med status ${response.status}.`);
+      }
 
-        if (!geometry || !geometry.coordinates.length) {
-          return null;
-        }
-
-        return {
-          type: "Feature",
-          properties: {
-            referanse: segment.kortform || `Veglenkesekvens ${segment.veglenkesekvensid}`,
-            typeVeg: veglenke.typeVeg || segment.typeVeg || "Ukjent vegtype"
-          },
-          geometry
-        };
-      })
-      .filter(Boolean);
+      roadTileManifest = await response.json();
+      return roadTileManifest;
+    });
   }
 
-  return [];
+  return manifestPromise;
+}
+
+async function loadRoadTile(tile) {
+  if (roadTileLayers.has(tile.id)) {
+    return roadTileLayers.get(tile.id);
+  }
+
+  const response = await fetch(`./${tile.file}`, {
+    headers: {
+      Accept: "application/geo+json,application/json"
+    }
+  });
+
+  if (!response.ok) {
+    throw new Error(`Vegflis ${tile.id} svarte med status ${response.status}.`);
+  }
+
+  const data = await response.json();
+  const layer = createRoadLayer(data);
+  roadTileLayers.set(tile.id, layer);
+  return layer;
 }
 
 async function loadNvdbRoads() {
   if (!nvdbToggle.checked) {
-    nvdbLayer.clearLayers();
-    hasLoadedRoadOverlay = false;
+    roadTileLayers.forEach((layer) => map.removeLayer(layer));
     return;
   }
 
-  if (hasLoadedRoadOverlay) {
+  if (map.getZoom() < 9) {
+    roadTileLayers.forEach((layer) => map.removeLayer(layer));
+    setStatus("Zoom inn for a vise alle vegene i omradet.");
     return;
   }
 
   try {
-    const response = await fetch("./data/vestlandet-roads.geojson", {
-      headers: {
-        Accept: "application/geo+json,application/json"
+    const manifest = await loadRoadManifest();
+    const visibleTiles = manifest.filter((tile) => intersectsBbox(map.getBounds(), tile.bbox));
+    const visibleTileIds = new Set(visibleTiles.map((tile) => tile.id));
+
+    roadTileLayers.forEach((layer, tileId) => {
+      if (!visibleTileIds.has(tileId) && map.hasLayer(layer)) {
+        map.removeLayer(layer);
       }
     });
 
-    if (!response.ok) {
-      throw new Error(`Veglaget svarte med status ${response.status}.`);
+    for (const tile of visibleTiles) {
+      const layer = await loadRoadTile(tile);
+      if (!map.hasLayer(layer)) {
+        layer.addTo(map);
+      }
     }
-
-    const data = await response.json();
-    nvdbLayer.clearLayers();
-    nvdbLayer.addData(data);
-    hasLoadedRoadOverlay = true;
   } catch (error) {
     setStatus(`Kunne ikke laste veglaget akkurat na. ${error.message}`);
   }
@@ -342,4 +348,5 @@ async function loadNvdbRoads() {
 routeForm.addEventListener("submit", handleRouteSubmit);
 swapButton.addEventListener("click", swapAddresses);
 nvdbToggle.addEventListener("change", loadNvdbRoads);
+map.on("moveend", loadNvdbRoads);
 loadNvdbRoads();

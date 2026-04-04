@@ -4,14 +4,16 @@ En liten statisk webapp som lar deg:
 
 - skrive inn fra- og til-adresse
 - beregne kjorerute, distanse og estimert kjoretid
-- vise et forenklet hovedvegkart for Vestlandet som eget kartlag
+- vise alle veier for Vestlandet som eget kartlag
 
 ## Filer
 
 - `index.html` setter opp grensesnittet
 - `styles.css` styrer utseendet
-- `app.js` handterer kart, adresseoppslag, rute og veglag
-- `data/vestlandet-roads.geojson` inneholder et lettvekts veglag for kartet
+- `app.js` handterer kart, adresseoppslag, rute og lasting av vegfliser
+- `data/road-tiles/` inneholder vegdata delt opp i geografiske fliser
+- `data/vestlandet-road-tiles.json` er manifestet som forteller appen hvilke fliser som finnes
+- `scripts/build-road-dataset.ps1` bygger datasettene fra OpenStreetMap via Overpass
 
 ## Slik starter du lokalt
 
@@ -32,11 +34,11 @@ http://localhost:8000
 - Kartbakgrunn: OpenStreetMap
 - Adresseoppslag: Nominatim
 - Ruteberegning: OSRM demo-server
-- Veglag: lokal GeoJSON-fil i repoet
+- Veglag: lokale GeoJSON-fliser generert fra OpenStreetMap-data
 
 ## Merknad
 
-Veglaget lastes fra repoet i stedet for et eksternt API. Det gjor siden mer stabil pa GitHub Pages.
+Veglaget lastes fra repoet i stedet for et eksternt API. For a holde siden brukbar er vegnettet delt opp i fliser som lastes etter kartutsnitt og zoom.
 
 ## GitHub Pages
 
