@@ -248,6 +248,30 @@ async function fetchValhallaRoute(from, to, allowFerries = true) {
   return data.routes[0];
 }
 
+function wait(milliseconds) {
+  return new Promise((resolve) => {
+    window.setTimeout(resolve, milliseconds);
+  });
+}
+
+async function fetchRouteWithRetry(from, to, allowFerries = true, attempts = 3) {
+  let lastError = null;
+
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    try {
+      return await fetchValhallaRoute(from, to, allowFerries);
+    } catch (error) {
+      lastError = error;
+
+      if (attempt < attempts) {
+        await wait(250 * attempt);
+      }
+    }
+  }
+
+  throw lastError;
+}
+
 function decodePolyline(encoded, precision = 6) {
   let index = 0;
   let lat = 0;
@@ -527,7 +551,7 @@ async function buildFutureRoute(from, to, projects) {
   const selectedProjects = orderedProjects.filter((project) => shouldUseProject(project, from, to));
 
   if (!selectedProjects.length) {
-    const route = await fetchValhallaRoute(from, to, false);
+    const route = await fetchRouteWithRetry(from, to, false);
     return {
       geometry: routeGeometry(route),
       duration: route.duration,
@@ -540,34 +564,46 @@ async function buildFutureRoute(from, to, projects) {
   let totalDistance = 0;
   let currentPoint = { lon: from.lon, lat: from.lat };
 
-  for (const project of selectedProjects) {
-    const entryPoint = northToSouth ? project.northPortal : project.southPortal;
-    const exitPoint = northToSouth ? project.southPortal : project.northPortal;
-    const projectGeometry = northToSouth ? reverseGeometry(project.geometry) : project.geometry;
+  try {
+    for (const project of selectedProjects) {
+      const entryPoint = northToSouth ? project.northPortal : project.southPortal;
+      const exitPoint = northToSouth ? project.southPortal : project.northPortal;
+      const projectGeometry = northToSouth ? reverseGeometry(project.geometry) : project.geometry;
 
-    const connectorToProject = await fetchValhallaRoute(currentPoint, entryPoint, false);
-    const connectorGeometry = routeGeometry(connectorToProject);
-    segments.push(connectorGeometry);
-    totalDuration += connectorToProject.duration;
-    totalDistance += connectorToProject.distance;
+      const connectorToProject = await fetchRouteWithRetry(currentPoint, entryPoint, false);
+      const connectorGeometry = routeGeometry(connectorToProject);
+      segments.push(connectorGeometry);
+      totalDuration += connectorToProject.duration;
+      totalDistance += connectorToProject.distance;
 
-    segments.push(projectGeometry);
-    totalDuration += approximateProjectDurationSeconds(projectGeometry);
-    totalDistance += geometryLengthMeters(projectGeometry);
+      segments.push(projectGeometry);
+      totalDuration += approximateProjectDurationSeconds(projectGeometry);
+      totalDistance += geometryLengthMeters(projectGeometry);
 
-    currentPoint = exitPoint;
+      currentPoint = exitPoint;
+    }
+
+    const connectorToDestination = await fetchRouteWithRetry(currentPoint, to, false);
+    segments.push(routeGeometry(connectorToDestination));
+    totalDuration += connectorToDestination.duration;
+    totalDistance += connectorToDestination.distance;
+
+    return {
+      geometry: combineLineStrings(segments),
+      duration: totalDuration,
+      distance: totalDistance,
+      usedProjects: true
+    };
+  } catch (error) {
+    const fallbackRoute = await fetchRouteWithRetry(from, to, false);
+
+    return {
+      geometry: routeGeometry(fallbackRoute),
+      duration: fallbackRoute.duration,
+      distance: fallbackRoute.distance,
+      usedProjects: false
+    };
   }
-
-  const connectorToDestination = await fetchValhallaRoute(currentPoint, to, false);
-  segments.push(routeGeometry(connectorToDestination));
-  totalDuration += connectorToDestination.duration;
-  totalDistance += connectorToDestination.distance;
-
-  return {
-    geometry: combineLineStrings(segments),
-    duration: totalDuration,
-    distance: totalDistance
-  };
 }
 
 function drawRoute(mapInstance, geometry, color) {
@@ -616,21 +652,39 @@ async function handleRouteSubmit(event) {
     updateMarker(futureMarkers, futureMap, "from", [from.lat, from.lon], "A", from.label, "#0f766e");
     updateMarker(futureMarkers, futureMap, "to", [to.lat, to.lon], "B", to.label, "#f97316");
 
-    const [currentRoute, futureRoute] = await Promise.all([
-      fetchValhallaRoute(from, to, ferryToggle.checked),
+    const [currentRouteResult, futureRouteResult] = await Promise.allSettled([
+      fetchRouteWithRetry(from, to, ferryToggle.checked),
       buildFutureRoute(from, to, projects)
     ]);
 
+    if (currentRouteResult.status === "rejected") {
+      throw currentRouteResult.reason;
+    }
+
+    const currentRoute = currentRouteResult.value;
     currentRouteLine = drawRoute(currentMap, routeGeometry(currentRoute), "#f97316");
-    futureRouteLine = drawRoute(futureMap, futureRoute.geometry, "#1d4ed8");
 
     currentDurationOutput.textContent = formatDuration(currentRoute.duration);
     currentDistanceOutput.textContent = formatDistance(currentRoute.distance);
-    futureDurationOutput.textContent = formatDuration(futureRoute.duration);
-    futureDistanceOutput.textContent = formatDistance(futureRoute.distance);
 
-    fitBothMaps(currentRouteLine, futureRouteLine);
-    setStatus("Begge kartene er oppdatert. Hoyre kart bruker de opplastede prosjektlinjene som nye forbindelser.");
+    if (futureRouteResult.status === "fulfilled") {
+      const futureRoute = futureRouteResult.value;
+      futureRouteLine = drawRoute(futureMap, futureRoute.geometry, "#1d4ed8");
+      futureDurationOutput.textContent = formatDuration(futureRoute.duration);
+      futureDistanceOutput.textContent = formatDistance(futureRoute.distance);
+      fitBothMaps(currentRouteLine, futureRouteLine);
+
+      setStatus(
+        futureRoute.usedProjects
+          ? "Begge kartene er oppdatert. Hoyre kart bruker framtidsforbindelsene i ruteberegningen."
+          : "Begge kartene er oppdatert. Hoyre kart falt tilbake til fergefri ruteberegning uten prosjektkoblinger."
+      );
+    } else {
+      futureDurationOutput.textContent = "-";
+      futureDistanceOutput.textContent = "-";
+      fitBothMaps(currentRouteLine, currentRouteLine);
+      setStatus("Dagens rute er oppdatert, men framtidskartet kunne ikke beregnes akkurat na.");
+    }
   } catch (error) {
     currentDurationOutput.textContent = "-";
     currentDistanceOutput.textContent = "-";
