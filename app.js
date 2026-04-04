@@ -21,6 +21,7 @@ const durationOutput = document.getElementById("duration-output");
 const distanceOutput = document.getElementById("distance-output");
 const statusOutput = document.getElementById("status-output");
 const nvdbToggle = document.getElementById("nvdb-toggle");
+const ferryToggle = document.getElementById("ferry-toggle");
 
 const markers = {
   from: null,
@@ -114,17 +115,30 @@ async function geocodeAddress(query) {
 }
 
 async function fetchRoute(from, to) {
-  const url = new URL(
-    `https://router.project-osrm.org/route/v1/driving/${from.lon},${from.lat};${to.lon},${to.lat}`
-  );
-  url.searchParams.set("overview", "full");
-  url.searchParams.set("geometries", "geojson");
-  url.searchParams.set("steps", "false");
-
-  const response = await fetch(url, {
+  const response = await fetch("https://valhalla1.openstreetmap.de/route", {
+    method: "POST",
     headers: {
+      "Content-Type": "application/json",
       Accept: "application/json"
-    }
+    },
+    body: JSON.stringify({
+      locations: [
+        { lon: from.lon, lat: from.lat },
+        { lon: to.lon, lat: to.lat }
+      ],
+      costing: "auto",
+      costing_options: {
+        auto: {
+          use_ferry: ferryToggle.checked ? 1.0 : 0.0,
+          exclude_ferry: !ferryToggle.checked
+        }
+      },
+      directions_options: {
+        units: "kilometers",
+        format: "osrm",
+        shape_format: "geojson"
+      }
+    })
   });
 
   if (!response.ok) {
@@ -173,7 +187,11 @@ async function handleRouteSubmit(event) {
 
   try {
     setBusy(true);
-    setStatus("Soker opp adresser og beregner rute...");
+    setStatus(
+      ferryToggle.checked
+        ? "Soker opp adresser og beregner rute med ferger tillatt..."
+        : "Soker opp adresser og beregner rute uten ferger..."
+    );
     clearRoute();
 
     const [from, to] = await Promise.all([geocodeAddress(fromText), geocodeAddress(toText)]);

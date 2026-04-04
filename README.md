@@ -4,6 +4,7 @@ En liten statisk webapp som lar deg:
 
 - skrive inn fra- og til-adresse
 - beregne kjorerute, distanse og estimert kjoretid
+- velge om ferger skal tillates i ruteberegning
 - vise alle veier for Vestlandet som eget kartlag
 
 ## Filer
@@ -33,7 +34,7 @@ http://localhost:8000
 
 - Kartbakgrunn: OpenStreetMap
 - Adresseoppslag: Nominatim
-- Ruteberegning: OSRM demo-server
+- Ruteberegning: Valhalla public demo
 - Veglag: lokale GeoJSON-fliser generert fra OpenStreetMap-data
 
 ## Merknad
