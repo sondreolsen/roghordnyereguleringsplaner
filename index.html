@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vestlandet Kjoretidskart</title>
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+    crossorigin=""
+  >
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="panel">
+      <div class="hero">
+        <p class="eyebrow">Vestlandet</p>
+        <h1>Kjoretid mellom adresser</h1>
+        <p class="intro">
+          Skriv inn start og mal for a se rute, distanse og estimert kjoretid. Kartet viser
+          ogsa vegnett fra Statens vegvesen sitt NVDB-API for fylkene 46 og 11.
+        </p>
+      </div>
+
+      <form id="route-form" class="route-form">
+        <label class="field">
+          <span>Fra-adresse</span>
+          <input
+            id="from-input"
+            name="from"
+            type="text"
+            placeholder="For eksempel Vaagsallmenningen 1, Bergen"
+            required
+          >
+        </label>
+
+        <label class="field">
+          <span>Til-adresse</span>
+          <input
+            id="to-input"
+            name="to"
+            type="text"
+            placeholder="For eksempel Sjogata 6, Stavanger"
+            required
+          >
+        </label>
+
+        <div class="actions">
+          <button type="submit" id="submit-button">Beregn kjoretid</button>
+          <button type="button" id="swap-button" class="ghost-button">Bytt om</button>
+        </div>
+      </form>
+
+      <section class="results">
+        <div class="result-card">
+          <span class="result-label">Kjoretid</span>
+          <strong id="duration-output">-</strong>
+        </div>
+        <div class="result-card">
+          <span class="result-label">Distanse</span>
+          <strong id="distance-output">-</strong>
+        </div>
+      </section>
+
+      <section class="status-card">
+        <h2>Status</h2>
+        <p id="status-output">Klar. Sok opp to adresser for a beregne en kjoretur.</p>
+      </section>
+
+      <section class="legend-card">
+        <h2>Kartlag</h2>
+        <label class="toggle">
+          <input id="nvdb-toggle" type="checkbox" checked>
+          <span>Vis NVDB-vegnett for Vestlandet</span>
+        </label>
+        <p class="legend-note">
+          Vegnettet lastes for omradet du ser pa i kartet for a holde appen rask.
+        </p>
+      </section>
+    </aside>
+
+    <main class="map-wrap">
+      <div id="map" aria-label="Kart over Vestlandet"></div>
+    </main>
+  </div>
+
+  <script
+    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+    crossorigin=""
+  ></script>
+  <script src="./app.js"></script>
+</body>
+</html>
