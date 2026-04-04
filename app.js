@@ -153,6 +153,48 @@ async function fetchRoute(from, to) {
   return data.routes[0];
 }
 
+function decodePolyline(encoded, precision = 6) {
+  let index = 0;
+  let lat = 0;
+  let lon = 0;
+  const coordinates = [];
+  const factor = 10 ** precision;
+
+  while (index < encoded.length) {
+    let result = 0;
+    let shift = 0;
+    let byte;
+
+    do {
+      byte = encoded.charCodeAt(index++) - 63;
+      result |= (byte & 0x1f) << shift;
+      shift += 5;
+    } while (byte >= 0x20);
+
+    const latitudeChange = result & 1 ? ~(result >> 1) : result >> 1;
+    lat += latitudeChange;
+
+    result = 0;
+    shift = 0;
+
+    do {
+      byte = encoded.charCodeAt(index++) - 63;
+      result |= (byte & 0x1f) << shift;
+      shift += 5;
+    } while (byte >= 0x20);
+
+    const longitudeChange = result & 1 ? ~(result >> 1) : result >> 1;
+    lon += longitudeChange;
+
+    coordinates.push([lon / factor, lat / factor]);
+  }
+
+  return {
+    type: "LineString",
+    coordinates
+  };
+}
+
 function updateMarker(key, latlng, label, popupText) {
   if (markers[key]) {
     markers[key].setLatLng(latlng);
@@ -201,7 +243,12 @@ async function handleRouteSubmit(event) {
 
     const route = await fetchRoute(from, to);
 
-    routeLine = L.geoJSON(route.geometry, {
+    const routeGeometry =
+      typeof route.geometry === "string"
+        ? decodePolyline(route.geometry, 6)
+        : route.geometry;
+
+    routeLine = L.geoJSON(routeGeometry, {
       style: {
         color: "#f97316",
         weight: 6,
