@@ -9,6 +9,7 @@ const PROJECT_SPECS = [
     name: "Hordfast",
     file: "./hordfast_simplified.geojson",
     color: "#7c3aed",
+    speedKph: 110,
     northPortal: { lon: 5.44045, lat: 60.20445 },
     southPortal: { lon: 5.49657, lat: 59.79889 },
     corridor: {
@@ -22,6 +23,7 @@ const PROJECT_SPECS = [
     name: "Bokn-Bomlafjorden",
     file: "./e39_bokn_bomlafjorden_alt1_simplified.geojson",
     color: "#d97706",
+    speedKph: 110,
     northPortal: { lon: 5.488, lat: 59.704 },
     southPortal: { lon: 5.443, lat: 59.1845 },
     corridor: {
@@ -35,6 +37,7 @@ const PROJECT_SPECS = [
     name: "Rogfast",
     file: "./e39_rogfast_approx.geojson",
     color: "#1d4ed8",
+    speedKph: 110,
     routeFeatureIds: [
       "rogfast_bokn_surface_road_approx",
       "rogfast_main_tunnel_approx"
@@ -513,9 +516,9 @@ function combineLineStrings(segments) {
   };
 }
 
-function approximateProjectDurationSeconds(geometry) {
+function approximateProjectDurationSeconds(geometry, speedKph = 110) {
   const meters = geometryLengthMeters(geometry);
-  const speedMetersPerSecond = 100 / 3.6;
+  const speedMetersPerSecond = speedKph / 3.6;
   return meters / speedMetersPerSecond;
 }
 
@@ -577,7 +580,7 @@ async function buildFutureRoute(from, to, projects) {
       totalDistance += connectorToProject.distance;
 
       segments.push(projectGeometry);
-      totalDuration += approximateProjectDurationSeconds(projectGeometry);
+      totalDuration += approximateProjectDurationSeconds(projectGeometry, project.speedKph);
       totalDistance += geometryLengthMeters(projectGeometry);
 
       currentPoint = exitPoint;
