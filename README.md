@@ -36,3 +36,14 @@ http://localhost:8000
 ## Merknad
 
 NVDB-laget lastes for kartutsnittet du ser pa. Det gjor at losningen er lettere enn a laste hele Vestlandet pa en gang.
+
+## GitHub Pages
+
+Repoet er satt opp med en GitHub Actions-workflow som kan publisere siden til GitHub Pages.
+For dette repoet vil adressen normalt bli:
+
+```text
+https://sondreolsen.github.io/roghordnyereguleringsplaner/
+```
+
+Hvis Pages ikke er aktivert automatisk, maa du i GitHub ga til Settings > Pages og velge GitHub Actions som kilde.
