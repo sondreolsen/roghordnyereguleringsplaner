@@ -35,8 +35,8 @@ let nvdbLayer = L.geoJSON([], {
     opacity: 0.55
   }
 }).addTo(map);
-let nvdbFetchTimer = null;
 let currentNvdbController = null;
+let hasLoadedNvdb = false;
 
 const markerIcon = (label) =>
   L.divIcon({
@@ -312,20 +312,19 @@ function toGeoJsonFeatures(segment) {
 async function loadNvdbRoads() {
   if (!nvdbToggle.checked) {
     nvdbLayer.clearLayers();
+    hasLoadedNvdb = false;
     return;
   }
 
-  const bounds = map.getBounds();
+  if (hasLoadedNvdb) {
+    return;
+  }
+
   const url = new URL("https://nvdbapiles.atlas.vegvesen.no/vegnett/api/v4/veglenkesekvenser");
   url.searchParams.set("fylke", "46,11");
   url.searchParams.set("srid", "4326");
-  url.searchParams.set("kartutsnitt", [
-    bounds.getWest().toFixed(5),
-    bounds.getSouth().toFixed(5),
-    bounds.getEast().toFixed(5),
-    bounds.getNorth().toFixed(5)
-  ].join(","));
-  url.searchParams.set("antall", "1500");
+  url.searchParams.set("antall", "800");
+  url.searchParams.set("sortert", "false");
   url.searchParams.set("inkluderAntall", "false");
 
   if (currentNvdbController) {
@@ -352,6 +351,7 @@ async function loadNvdbRoads() {
 
     nvdbLayer.clearLayers();
     nvdbLayer.addData(features);
+    hasLoadedNvdb = true;
   } catch (error) {
     if (error.name === "AbortError") {
       return;
@@ -361,14 +361,7 @@ async function loadNvdbRoads() {
   }
 }
 
-function scheduleNvdbLoad() {
-  window.clearTimeout(nvdbFetchTimer);
-  nvdbFetchTimer = window.setTimeout(loadNvdbRoads, 350);
-}
-
 routeForm.addEventListener("submit", handleRouteSubmit);
 swapButton.addEventListener("click", swapAddresses);
 nvdbToggle.addEventListener("change", loadNvdbRoads);
-map.on("moveend", scheduleNvdbLoad);
-
-scheduleNvdbLoad();
+loadNvdbRoads();
