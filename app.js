@@ -68,6 +68,20 @@ const PROJECT_LINK_SPECS = [
         [5.488, 59.704]
       ]
     }
+  },
+  {
+    fromId: "bokn-bomlafjorden",
+    toId: "rogfast",
+    speedKph: 110,
+    geometry: {
+      type: "LineString",
+      coordinates: [
+        [5.443, 59.1845],
+        [5.4465, 59.191],
+        [5.4505, 59.1985],
+        [5.456, 59.207]
+      ]
+    }
   }
 ];
 
