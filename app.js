@@ -637,9 +637,9 @@ async function buildFutureRoute(from, to, projects) {
   const selectedProjects = orderedProjects.filter((project) => shouldUseProject(project, from, to));
 
   if (!selectedProjects.length) {
-    const route = await fetchRouteWithRetry(from, to, false);
+    const route = await buildCurrentRoute(from, to, true);
     return {
-      geometry: routeGeometry(route),
+      geometry: route.geometry,
       duration: route.duration,
       distance: route.distance
     };
@@ -666,9 +666,8 @@ async function buildFutureRoute(from, to, projects) {
         totalDuration += approximateProjectDurationSeconds(projectLink.geometry, projectLink.speedKph);
         totalDistance += geometryLengthMeters(projectLink.geometry);
       } else {
-        const connectorToProject = await fetchRouteWithRetry(currentPoint, entryPoint, false);
-        const connectorGeometry = routeGeometry(connectorToProject);
-        segments.push(connectorGeometry);
+        const connectorToProject = await buildCurrentRoute(currentPoint, entryPoint, true);
+        segments.push(connectorToProject.geometry);
         totalDuration += connectorToProject.duration;
         totalDistance += connectorToProject.distance;
       }
@@ -680,8 +679,8 @@ async function buildFutureRoute(from, to, projects) {
       currentPoint = exitPoint;
     }
 
-    const connectorToDestination = await fetchRouteWithRetry(currentPoint, to, false);
-    segments.push(routeGeometry(connectorToDestination));
+    const connectorToDestination = await buildCurrentRoute(currentPoint, to, true);
+    segments.push(connectorToDestination.geometry);
     totalDuration += connectorToDestination.duration;
     totalDistance += connectorToDestination.distance;
 
@@ -692,10 +691,10 @@ async function buildFutureRoute(from, to, projects) {
       usedProjects: true
     };
   } catch (error) {
-    const fallbackRoute = await fetchRouteWithRetry(from, to, false);
+    const fallbackRoute = await buildCurrentRoute(from, to, true);
 
     return {
-      geometry: routeGeometry(fallbackRoute),
+      geometry: fallbackRoute.geometry,
       duration: fallbackRoute.duration,
       distance: fallbackRoute.distance,
       usedProjects: false
