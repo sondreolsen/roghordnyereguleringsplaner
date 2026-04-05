@@ -110,7 +110,6 @@ const currentDistanceOutput = document.getElementById("current-distance-output")
 const futureDurationOutput = document.getElementById("future-duration-output");
 const futureDistanceOutput = document.getElementById("future-distance-output");
 const statusOutput = document.getElementById("status-output");
-const ferryToggle = document.getElementById("ferry-toggle");
 
 const currentMap = createMap("current-map");
 const futureMap = createMap("future-map");
@@ -749,7 +748,7 @@ async function handleRouteSubmit(event) {
     updateMarker(futureMarkers, futureMap, "to", [to.lat, to.lon], "B", to.label, "#f97316");
 
     const [currentRouteResult, futureRouteResult] = await Promise.allSettled([
-      buildCurrentRoute(from, to, ferryToggle.checked),
+      buildCurrentRoute(from, to, true),
       buildFutureRoute(from, to, projects)
     ]);
 
