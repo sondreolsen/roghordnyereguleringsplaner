@@ -95,20 +95,12 @@ const currentDistanceOutput = document.getElementById("current-distance-output")
 const futureDurationOutput = document.getElementById("future-duration-output");
 const futureDistanceOutput = document.getElementById("future-distance-output");
 const statusOutput = document.getElementById("status-output");
-const roadsToggle = document.getElementById("roads-toggle");
 const ferryToggle = document.getElementById("ferry-toggle");
 
 const currentMap = createMap("current-map");
 const futureMap = createMap("future-map");
 
 syncMaps(currentMap, futureMap);
-
-const roadTileManifestPromise = fetchJson("./data/vestlandet-road-tiles.json");
-const roadTileDataCache = new Map();
-const roadTileLayerStores = {
-  current: new Map(),
-  future: new Map()
-};
 
 const projectDataPromise = Promise.all(PROJECT_SPECS.map(loadProjectSpec));
 
@@ -134,7 +126,7 @@ function syncMaps(mapA, mapB) {
   let isSyncing = false;
 
   function bind(source, target) {
-    source.on("move", () => {
+    source.on("moveend zoomend", () => {
       if (isSyncing) {
         return;
       }
@@ -381,96 +373,6 @@ function clearRoutes() {
   removeLayerIfExists(futureMap, futureRouteLine);
   currentRouteLine = null;
   futureRouteLine = null;
-}
-
-function roadWeight(highway) {
-  switch (highway) {
-    case "motorway":
-    case "trunk":
-      return 3;
-    case "primary":
-    case "secondary":
-      return 2.4;
-    case "tertiary":
-    case "unclassified":
-      return 1.8;
-    default:
-      return 1.1;
-  }
-}
-
-function roadOpacity(highway) {
-  switch (highway) {
-    case "motorway":
-    case "trunk":
-    case "primary":
-      return 0.9;
-    case "secondary":
-    case "tertiary":
-      return 0.75;
-    default:
-      return 0.45;
-  }
-}
-
-function createRoadLayer(data) {
-  return L.geoJSON(data, {
-    style(feature) {
-      const highway = feature?.properties?.h || "service";
-      return {
-        color: "#0f766e",
-        weight: roadWeight(highway),
-        opacity: roadOpacity(highway)
-      };
-    }
-  });
-}
-
-function intersectsBbox(bounds, bbox) {
-  const [south, west, north, east] = bbox;
-  return !(
-    bounds.getNorth() < south ||
-    bounds.getSouth() > north ||
-    bounds.getEast() < west ||
-    bounds.getWest() > east
-  );
-}
-
-async function ensureRoadTiles(mapName, mapInstance) {
-  const store = roadTileLayerStores[mapName];
-
-  if (!roadsToggle.checked || mapInstance.getZoom() < 9) {
-    store.forEach((layer) => removeLayerIfExists(mapInstance, layer));
-    return;
-  }
-
-  const manifest = await roadTileManifestPromise;
-  const visibleTiles = manifest.filter((tile) => intersectsBbox(mapInstance.getBounds(), tile.bbox));
-  const visibleIds = new Set(visibleTiles.map((tile) => tile.id));
-
-  store.forEach((layer, tileId) => {
-    if (!visibleIds.has(tileId)) {
-      removeLayerIfExists(mapInstance, layer);
-    }
-  });
-
-  for (const tile of visibleTiles) {
-    let data = roadTileDataCache.get(tile.id);
-    if (!data) {
-      data = await fetchJson(`./${tile.file}`);
-      roadTileDataCache.set(tile.id, data);
-    }
-
-    let layer = store.get(tile.id);
-    if (!layer) {
-      layer = createRoadLayer(data);
-      store.set(tile.id, layer);
-    }
-
-    if (!mapInstance.hasLayer(layer)) {
-      layer.addTo(mapInstance);
-    }
-  }
 }
 
 function flattenProjectCoordinates(geojson, spec) {
@@ -797,21 +699,5 @@ function swapAddresses() {
   toInput.value = currentFrom;
 }
 
-async function refreshRoadLayers() {
-  try {
-    await Promise.all([
-      ensureRoadTiles("current", currentMap),
-      ensureRoadTiles("future", futureMap)
-    ]);
-  } catch (error) {
-    setStatus(`Kunne ikke laste veglaget akkurat na. ${error.message}`);
-  }
-}
-
 routeForm.addEventListener("submit", handleRouteSubmit);
 swapButton.addEventListener("click", swapAddresses);
-roadsToggle.addEventListener("change", refreshRoadLayers);
-currentMap.on("moveend", refreshRoadLayers);
-futureMap.on("moveend", refreshRoadLayers);
-
-refreshRoadLayers();
