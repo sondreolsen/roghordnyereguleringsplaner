@@ -85,6 +85,21 @@ const PROJECT_LINK_SPECS = [
   }
 ];
 
+const CURRENT_FERRY_SPECS = [
+  {
+    id: "lavik-oppedal",
+    name: "Lavik-Oppedal",
+    northTerminal: { lon: 5.507007, lat: 61.104983 },
+    southTerminal: { lon: 5.5040755, lat: 61.0547902 },
+    crossingMinutes: 20,
+    corridor: {
+      northMinLat: 61.0,
+      southMaxLat: 61.06,
+      eastMaxLon: 7.3
+    }
+  }
+];
+
 const routeForm = document.getElementById("route-form");
 const fromInput = document.getElementById("from-input");
 const toInput = document.getElementById("to-input");
@@ -507,6 +522,89 @@ function approximateProjectDurationSeconds(geometry, speedKph = 110) {
   return meters / speedMetersPerSecond;
 }
 
+function shouldEvaluateCurrentFerry(ferrySpec, from, to) {
+  const northLat = Math.max(from.lat, to.lat);
+  const southLat = Math.min(from.lat, to.lat);
+  const eastLon = Math.max(from.lon, to.lon);
+  const corridor = ferrySpec.corridor;
+
+  return (
+    northLat >= corridor.northMinLat &&
+    southLat <= corridor.southMaxLat &&
+    eastLon <= corridor.eastMaxLon
+  );
+}
+
+async function buildForcedFerryRoute(from, to, ferrySpec) {
+  const northToSouth = from.lat >= to.lat;
+  const firstTerminal = northToSouth ? ferrySpec.northTerminal : ferrySpec.southTerminal;
+  const secondTerminal = northToSouth ? ferrySpec.southTerminal : ferrySpec.northTerminal;
+
+  const [firstLeg, ferryLeg, lastLeg] = await Promise.all([
+    fetchRouteWithRetry(from, firstTerminal, true),
+    fetchRouteWithRetry(firstTerminal, secondTerminal, true),
+    fetchRouteWithRetry(secondTerminal, to, true)
+  ]);
+
+  return {
+    geometry: combineLineStrings([
+      routeGeometry(firstLeg),
+      routeGeometry(ferryLeg),
+      routeGeometry(lastLeg)
+    ]),
+    duration: firstLeg.duration + (ferrySpec.crossingMinutes * 60) + lastLeg.duration,
+    distance: firstLeg.distance + ferryLeg.distance + lastLeg.distance,
+    usedPreferredFerry: ferrySpec.id
+  };
+}
+
+async function buildCurrentRoute(from, to, allowFerries) {
+  const directRoute = await fetchRouteWithRetry(from, to, allowFerries);
+
+  if (!allowFerries) {
+    return {
+      geometry: routeGeometry(directRoute),
+      duration: directRoute.duration,
+      distance: directRoute.distance,
+      usedPreferredFerry: null
+    };
+  }
+
+  const candidateFerries = CURRENT_FERRY_SPECS.filter((ferrySpec) =>
+    shouldEvaluateCurrentFerry(ferrySpec, from, to)
+  );
+
+  if (!candidateFerries.length) {
+    return {
+      geometry: routeGeometry(directRoute),
+      duration: directRoute.duration,
+      distance: directRoute.distance,
+      usedPreferredFerry: null
+    };
+  }
+
+  let bestRoute = {
+    geometry: routeGeometry(directRoute),
+    duration: directRoute.duration,
+    distance: directRoute.distance,
+    usedPreferredFerry: null
+  };
+
+  for (const ferrySpec of candidateFerries) {
+    try {
+      const forcedRoute = await buildForcedFerryRoute(from, to, ferrySpec);
+
+      if (forcedRoute.duration < bestRoute.duration) {
+        bestRoute = forcedRoute;
+      }
+    } catch (error) {
+      continue;
+    }
+  }
+
+  return bestRoute;
+}
+
 async function loadProjectSpec(spec) {
   const geojson = await fetchJson(spec.file);
   const coordinates = flattenProjectCoordinates(geojson, spec);
@@ -652,7 +750,7 @@ async function handleRouteSubmit(event) {
     updateMarker(futureMarkers, futureMap, "to", [to.lat, to.lon], "B", to.label, "#f97316");
 
     const [currentRouteResult, futureRouteResult] = await Promise.allSettled([
-      fetchRouteWithRetry(from, to, ferryToggle.checked),
+      buildCurrentRoute(from, to, ferryToggle.checked),
       buildFutureRoute(from, to, projects)
     ]);
 
@@ -661,7 +759,7 @@ async function handleRouteSubmit(event) {
     }
 
     const currentRoute = currentRouteResult.value;
-    currentRouteLine = drawRoute(currentMap, routeGeometry(currentRoute), "#f97316");
+    currentRouteLine = drawRoute(currentMap, currentRoute.geometry, "#f97316");
 
     currentDurationOutput.textContent = formatDuration(currentRoute.duration);
     currentDistanceOutput.textContent = formatDistance(currentRoute.distance);
