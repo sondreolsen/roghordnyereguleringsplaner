@@ -162,7 +162,9 @@ function markerIcon(label, color) {
 }
 
 function setStatus(message) {
-  statusOutput.textContent = message;
+  if (statusOutput) {
+    statusOutput.textContent = message;
+  }
 }
 
 function setBusy(isBusy) {
