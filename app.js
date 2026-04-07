@@ -104,7 +104,6 @@ const routeForm = document.getElementById("route-form");
 const fromInput = document.getElementById("from-input");
 const toInput = document.getElementById("to-input");
 const submitButton = document.getElementById("submit-button");
-const swapButton = document.getElementById("swap-button");
 const currentDurationOutput = document.getElementById("current-duration-output");
 const currentDistanceOutput = document.getElementById("current-distance-output");
 const futureDurationOutput = document.getElementById("future-duration-output");
@@ -791,11 +790,4 @@ async function handleRouteSubmit(event) {
   }
 }
 
-function swapAddresses() {
-  const currentFrom = fromInput.value;
-  fromInput.value = toInput.value;
-  toInput.value = currentFrom;
-}
-
 routeForm.addEventListener("submit", handleRouteSubmit);
-swapButton.addEventListener("click", swapAddresses);
