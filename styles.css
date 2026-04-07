@@ -32,23 +32,24 @@ body {
 .page-shell {
   max-width: 1600px;
   margin: 0 auto;
-  padding: 26px;
+  padding: 18px 20px;
 }
 
 .hero {
-  margin-bottom: 22px;
-  padding: 28px 30px;
+  margin-bottom: 16px;
+  padding: 20px 24px;
   border: 1px solid var(--panel-border);
   border-radius: var(--radius-xl);
   background: var(--panel);
   box-shadow: var(--shadow);
   backdrop-filter: blur(14px);
+  text-align: center;
 }
 
 .brandline {
-  margin: 0 0 6px;
+  margin: 0 0 4px;
   color: rgba(30, 39, 33, 0.76);
-  font-size: 0.82rem;
+  font-size: 0.78rem;
   font-weight: 700;
   letter-spacing: 0.06em;
 }
@@ -66,16 +67,19 @@ body {
 .hero h1 {
   margin: 0;
   font-family: var(--font-display);
-  font-size: clamp(2rem, 3vw, 3.4rem);
-  line-height: 1.08;
+  font-size: clamp(1.55rem, 2.3vw, 2.65rem);
+  line-height: 1.12;
+  max-width: 980px;
+  margin-inline: auto;
 }
 
 .route-form {
   display: grid;
   grid-template-columns: minmax(220px, 1fr) minmax(220px, 1fr) auto;
   gap: 14px;
-  margin-top: 24px;
+  margin-top: 16px;
   align-items: end;
+  text-align: left;
 }
 
 .field {
@@ -136,7 +140,7 @@ button:hover {
 .map-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 22px;
+  gap: 18px;
 }
 
 .map-card {
@@ -153,7 +157,7 @@ button:hover {
 }
 
 .map-card-header {
-  padding: 18px 18px 14px;
+  padding: 14px 16px 10px;
 }
 
 .map-title-row {
@@ -197,8 +201,8 @@ button:hover {
 }
 
 .map-frame {
-  min-height: 620px;
-  height: 62vh;
+  min-height: 430px;
+  height: 48vh;
   background: #dbe8dc;
 }
 
@@ -230,7 +234,7 @@ button:hover {
   }
 
   .hero {
-    padding: 22px 18px;
+    padding: 18px 16px;
   }
 
   .route-form {
@@ -255,7 +259,7 @@ button:hover {
   }
 
   .map-frame {
-    min-height: 420px;
-    height: 50vh;
+    min-height: 360px;
+    height: 44vh;
   }
 }
