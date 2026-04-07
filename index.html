@@ -13,20 +13,13 @@
   <link rel="stylesheet" href="./styles.css">
 </head>
 <body>
-  <div class="app-shell">
-    <aside class="panel">
-      <div class="hero">
-        <p class="eyebrow">Vestlandet</p>
-        <h1>Kjoretid mellom adresser</h1>
-        <p class="intro">
-          Skriv inn start og mal for a sammenligne dagens vegnett med et framtidskart
-          der Hordfast, Rogfast og Bokn-Bomlafjorden er lagt inn som nye forbindelser.
-        </p>
-      </div>
-
+  <div class="page-shell">
+    <header class="hero">
+      <p class="eyebrow">Vestlandet</p>
+      <h1>Sjekk hvor mye tid du sparer med fremtidens E39!</h1>
       <form id="route-form" class="route-form">
         <label class="field">
-          <span>Fra-adresse</span>
+          <span>Fra</span>
           <input
             id="from-input"
             name="from"
@@ -37,7 +30,7 @@
         </label>
 
         <label class="field">
-          <span>Til-adresse</span>
+          <span>Til</span>
           <input
             id="to-input"
             name="to"
@@ -48,31 +41,23 @@
         </label>
 
         <div class="actions">
-          <button type="submit" id="submit-button">Beregn kjoretid</button>
+          <button type="submit" id="submit-button">Se reisetid!</button>
           <button type="button" id="swap-button" class="ghost-button">Bytt om</button>
         </div>
       </form>
-
-      <section class="results">
-        <div class="result-card">
-          <span class="result-label">Dagens nett</span>
-          <strong id="current-duration-output">-</strong>
-          <small id="current-distance-output">-</small>
-        </div>
-        <div class="result-card future-card">
-          <span class="result-label">Fremtidens E39</span>
-          <strong id="future-duration-output">-</strong>
-          <small id="future-distance-output">-</small>
-        </div>
-      </section>
-    </aside>
+    </header>
 
     <main class="map-grid">
       <section class="map-card">
         <div class="map-card-header">
-          <div>
-            <p class="map-eyebrow">Dagens nett</p>
-            <h2>Eksisterende rute</h2>
+          <div class="map-title-row">
+            <div>
+              <p class="map-eyebrow">Dagens E39</p>
+            </div>
+            <div class="time-pill">
+              <strong id="current-duration-output">-</strong>
+              <small id="current-distance-output">-</small>
+            </div>
           </div>
         </div>
         <div id="current-map" class="map-frame" aria-label="Kart for dagens vegnett"></div>
@@ -80,9 +65,14 @@
 
       <section class="map-card future-map-card">
         <div class="map-card-header">
-          <div>
-            <p class="map-eyebrow">Fremtidens E39</p>
-            <h2>Med Hordfast, Rogfast og Bokn-Bomlafjorden</h2>
+          <div class="map-title-row">
+            <div>
+              <p class="map-eyebrow">Fremtidens E39</p>
+            </div>
+            <div class="time-pill future-pill">
+              <strong id="future-duration-output">-</strong>
+              <small id="future-distance-output">-</small>
+            </div>
           </div>
         </div>
         <div id="future-map" class="map-frame" aria-label="Kart for framtidig vegnett"></div>

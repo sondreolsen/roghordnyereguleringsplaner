@@ -183,7 +183,7 @@ function setStatus(message) {
 
 function setBusy(isBusy) {
   submitButton.disabled = isBusy;
-  submitButton.textContent = isBusy ? "Beregner..." : "Beregn kjoretid";
+  submitButton.textContent = isBusy ? "Henter reisetid..." : "Se reisetid!";
 }
 
 function formatDuration(seconds) {
