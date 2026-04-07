@@ -32,12 +32,12 @@ body {
 .page-shell {
   max-width: 1600px;
   margin: 0 auto;
-  padding: 18px 20px;
+  padding: 14px 18px;
 }
 
 .hero {
-  margin-bottom: 16px;
-  padding: 20px 24px;
+  margin-bottom: 12px;
+  padding: 16px 20px;
   border: 1px solid var(--panel-border);
   border-radius: var(--radius-xl);
   background: var(--panel);
@@ -67,17 +67,18 @@ body {
 .hero h1 {
   margin: 0;
   font-family: var(--font-display);
-  font-size: clamp(1.55rem, 2.3vw, 2.65rem);
-  line-height: 1.12;
-  max-width: 980px;
+  font-size: clamp(1.35rem, 2vw, 2.25rem);
+  line-height: 1.08;
+  max-width: 1200px;
   margin-inline: auto;
+  white-space: nowrap;
 }
 
 .route-form {
   display: grid;
   grid-template-columns: minmax(220px, 1fr) minmax(220px, 1fr) auto;
   gap: 14px;
-  margin-top: 16px;
+  margin-top: 12px;
   align-items: end;
   text-align: left;
 }
@@ -132,6 +133,29 @@ button:hover {
   color: #f6fbfa;
 }
 
+.savings-card {
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  width: min(320px, 100%);
+  margin: 12px auto 0;
+  padding: 12px 18px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.78);
+  border: 1px solid rgba(31, 42, 36, 0.08);
+}
+
+.savings-label {
+  color: var(--muted);
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+
+.savings-card strong {
+  font-size: clamp(1.15rem, 1.8vw, 1.7rem);
+  line-height: 1.05;
+}
+
 .ghost-button {
   background: rgba(255, 255, 255, 0.72);
   color: var(--accent-strong);
@@ -140,7 +164,7 @@ button:hover {
 .map-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 18px;
+  gap: 16px;
 }
 
 .map-card {
@@ -157,7 +181,7 @@ button:hover {
 }
 
 .map-card-header {
-  padding: 14px 16px 10px;
+  padding: 12px 14px 8px;
 }
 
 .map-title-row {
@@ -177,7 +201,7 @@ button:hover {
 
 .time-pill {
   min-width: 190px;
-  padding: 14px 18px;
+  padding: 10px 16px;
   border-radius: 18px;
   background: var(--accent-soft);
   text-align: left;
@@ -189,7 +213,7 @@ button:hover {
 
 .time-pill strong {
   display: block;
-  font-size: clamp(1.45rem, 2vw, 2rem);
+  font-size: clamp(1.3rem, 1.8vw, 1.8rem);
   line-height: 1.05;
 }
 
@@ -201,8 +225,8 @@ button:hover {
 }
 
 .map-frame {
-  min-height: 430px;
-  height: 48vh;
+  min-height: 390px;
+  height: 43vh;
   background: #dbe8dc;
 }
 
@@ -217,6 +241,10 @@ button:hover {
 @media (max-width: 1100px) {
   .route-form {
     grid-template-columns: 1fr 1fr;
+  }
+
+  .hero h1 {
+    white-space: normal;
   }
 
   .actions {
@@ -239,6 +267,10 @@ button:hover {
 
   .route-form {
     grid-template-columns: 1fr;
+  }
+
+  .hero h1 {
+    white-space: normal;
   }
 
   .actions {

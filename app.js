@@ -108,6 +108,7 @@ const currentDurationOutput = document.getElementById("current-duration-output")
 const currentDistanceOutput = document.getElementById("current-distance-output");
 const futureDurationOutput = document.getElementById("future-duration-output");
 const futureDistanceOutput = document.getElementById("future-distance-output");
+const savingsOutput = document.getElementById("savings-output");
 const statusOutput = document.getElementById("status-output");
 
 const currentMap = createMap("current-map");
@@ -207,6 +208,15 @@ function formatDistance(meters) {
   }
 
   return `${(meters / 1000).toFixed(1).replace(".", ",")} km`;
+}
+
+function updateSavings(currentSeconds, futureSeconds) {
+  if (!savingsOutput) {
+    return;
+  }
+
+  const savedSeconds = Math.max(0, currentSeconds - futureSeconds);
+  savingsOutput.textContent = savedSeconds ? formatDuration(savedSeconds) : "0 min";
 }
 
 async function fetchJson(path) {
@@ -766,6 +776,7 @@ async function handleRouteSubmit(event) {
       futureRouteLine = drawRoute(futureMap, futureRoute.geometry, "#1d4ed8");
       futureDurationOutput.textContent = formatDuration(futureRoute.duration);
       futureDistanceOutput.textContent = formatDistance(futureRoute.distance);
+      updateSavings(currentRoute.duration, futureRoute.duration);
       fitBothMaps(currentRouteLine, futureRouteLine);
 
       setStatus(
@@ -776,6 +787,7 @@ async function handleRouteSubmit(event) {
     } else {
       futureDurationOutput.textContent = "-";
       futureDistanceOutput.textContent = "-";
+      updateSavings(0, 0);
       fitBothMaps(currentRouteLine, currentRouteLine);
       setStatus("Dagens rute er oppdatert, men framtidskartet kunne ikke beregnes akkurat na.");
     }
@@ -784,6 +796,7 @@ async function handleRouteSubmit(event) {
     currentDistanceOutput.textContent = "-";
     futureDurationOutput.textContent = "-";
     futureDistanceOutput.textContent = "-";
+    updateSavings(0, 0);
     setStatus(error.message);
   } finally {
     setBusy(false);
