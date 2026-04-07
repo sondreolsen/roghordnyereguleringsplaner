@@ -725,7 +725,7 @@ function fitBothMaps(currentLayer, futureLayer) {
   const bounds = group.getBounds();
 
   if (bounds.isValid()) {
-    currentMap.fitBounds(bounds.pad(0.12));
+    currentMap.fitBounds(bounds.pad(0.06));
   }
 }
 
