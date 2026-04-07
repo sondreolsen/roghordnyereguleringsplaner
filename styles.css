@@ -45,6 +45,14 @@ body {
   backdrop-filter: blur(14px);
 }
 
+.brandline {
+  margin: 0 0 6px;
+  color: rgba(30, 39, 33, 0.76);
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+
 .eyebrow,
 .map-eyebrow {
   margin: 0 0 10px;
