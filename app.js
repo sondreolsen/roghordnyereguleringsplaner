@@ -102,7 +102,7 @@ const CURRENT_FERRY_SPECS = [
 
 const PROJECT_BRANCH_POINTS = {
   "bokn-bomlafjorden": {
-    haugesundExit: [5.466, 59.44]
+    haugesundExit: [5.4633406, 59.4299784]
   }
 };
 
