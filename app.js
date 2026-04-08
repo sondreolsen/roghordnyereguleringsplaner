@@ -102,13 +102,7 @@ const CURRENT_FERRY_SPECS = [
 
 const PROJECT_BRANCH_POINTS = {
   "bokn-bomlafjorden": {
-    haugesundMerge: [5.478, 59.408],
-    haugesundJunction: [5.445157, 59.4230834],
-    haugesundBranch: [
-      [5.478, 59.408],
-      [5.462, 59.417],
-      [5.445157, 59.4230834]
-    ]
+    haugesundExit: [5.466, 59.44]
   }
 };
 
@@ -497,12 +491,8 @@ function sliceGeometryAtCoordinate(geometry, targetCoordinate, keepStartSegment)
   };
 }
 
-function reverseCoordinates(coordinates) {
-  return [...coordinates].reverse();
-}
-
-function isHaugesundKarmoyArea(point) {
-  return point.lat >= 59.18 && point.lat <= 59.52 && point.lon <= 5.5;
+function isHaugesundArea(point) {
+  return point.lat >= 59.34 && point.lat <= 59.5 && point.lon <= 5.45;
 }
 
 function projectPathForRoute(project, from, to, northToSouth) {
@@ -518,19 +508,10 @@ function projectPathForRoute(project, from, to, northToSouth) {
     };
   }
 
-  const haugesundMerge = PROJECT_BRANCH_POINTS["bokn-bomlafjorden"].haugesundMerge;
-  const haugesundJunction = PROJECT_BRANCH_POINTS["bokn-bomlafjorden"].haugesundJunction;
-  const haugesundBranch = PROJECT_BRANCH_POINTS["bokn-bomlafjorden"].haugesundBranch;
+  const haugesundExit = PROJECT_BRANCH_POINTS["bokn-bomlafjorden"].haugesundExit;
 
-  if (northToSouth && isHaugesundKarmoyArea(to)) {
-    const trunkGeometry = sliceGeometryAtCoordinate(defaultGeometry, haugesundMerge, true);
-    const geometry = combineLineStrings([
-      trunkGeometry,
-      {
-        type: "LineString",
-        coordinates: haugesundBranch
-      }
-    ]);
+  if (northToSouth && isHaugesundArea(to)) {
+    const geometry = sliceGeometryAtCoordinate(defaultGeometry, haugesundExit, true);
     const [exitLon, exitLat] = geometry.coordinates[geometry.coordinates.length - 1];
 
     return {
@@ -540,18 +521,12 @@ function projectPathForRoute(project, from, to, northToSouth) {
     };
   }
 
-  if (!northToSouth && isHaugesundKarmoyArea(from)) {
-    const trunkGeometry = sliceGeometryAtCoordinate(defaultGeometry, haugesundMerge, false);
-    const geometry = combineLineStrings([
-      {
-        type: "LineString",
-        coordinates: reverseCoordinates(haugesundBranch)
-      },
-      trunkGeometry
-    ]);
+  if (!northToSouth && isHaugesundArea(from)) {
+    const geometry = sliceGeometryAtCoordinate(defaultGeometry, haugesundExit, false);
+    const [entryLon, entryLat] = geometry.coordinates[0];
 
     return {
-      entryPoint: { lon: haugesundJunction[0], lat: haugesundJunction[1] },
+      entryPoint: { lon: entryLon, lat: entryLat },
       exitPoint: defaultExitPoint,
       geometry
     };
