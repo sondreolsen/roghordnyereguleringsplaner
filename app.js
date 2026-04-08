@@ -100,6 +100,12 @@ const CURRENT_FERRY_SPECS = [
   }
 ];
 
+const PROJECT_BRANCH_POINTS = {
+  "bokn-bomlafjorden": {
+    haugesundExit: [5.4633406, 59.4299784]
+  }
+};
+
 const routeForm = document.getElementById("route-form");
 const fromInput = document.getElementById("from-input");
 const toInput = document.getElementById("to-input");
@@ -464,6 +470,75 @@ function reverseGeometry(geometry) {
   };
 }
 
+function coordinatesMatch(coordinateA, coordinateB) {
+  return coordinateA[0] === coordinateB[0] && coordinateA[1] === coordinateB[1];
+}
+
+function sliceGeometryAtCoordinate(geometry, targetCoordinate, keepStartSegment) {
+  const matchIndex = geometry.coordinates.findIndex((coordinate) =>
+    coordinatesMatch(coordinate, targetCoordinate)
+  );
+
+  if (matchIndex < 0) {
+    return geometry;
+  }
+
+  return {
+    type: "LineString",
+    coordinates: keepStartSegment
+      ? geometry.coordinates.slice(0, matchIndex + 1)
+      : geometry.coordinates.slice(matchIndex)
+  };
+}
+
+function isHaugesundArea(point) {
+  return point.lat >= 59.34 && point.lat <= 59.5 && point.lon <= 5.45;
+}
+
+function projectPathForRoute(project, from, to, northToSouth) {
+  const defaultEntryPoint = northToSouth ? project.northPortal : project.southPortal;
+  const defaultExitPoint = northToSouth ? project.southPortal : project.northPortal;
+  const defaultGeometry = northToSouth ? reverseGeometry(project.geometry) : project.geometry;
+
+  if (project.id !== "bokn-bomlafjorden") {
+    return {
+      entryPoint: defaultEntryPoint,
+      exitPoint: defaultExitPoint,
+      geometry: defaultGeometry
+    };
+  }
+
+  const haugesundExit = PROJECT_BRANCH_POINTS["bokn-bomlafjorden"].haugesundExit;
+
+  if (northToSouth && isHaugesundArea(to)) {
+    const geometry = sliceGeometryAtCoordinate(defaultGeometry, haugesundExit, true);
+    const [exitLon, exitLat] = geometry.coordinates[geometry.coordinates.length - 1];
+
+    return {
+      entryPoint: defaultEntryPoint,
+      exitPoint: { lon: exitLon, lat: exitLat },
+      geometry
+    };
+  }
+
+  if (!northToSouth && isHaugesundArea(from)) {
+    const geometry = sliceGeometryAtCoordinate(defaultGeometry, haugesundExit, false);
+    const [entryLon, entryLat] = geometry.coordinates[0];
+
+    return {
+      entryPoint: { lon: entryLon, lat: entryLat },
+      exitPoint: defaultExitPoint,
+      geometry
+    };
+  }
+
+  return {
+    entryPoint: defaultEntryPoint,
+    exitPoint: defaultExitPoint,
+    geometry: defaultGeometry
+  };
+}
+
 function findProjectLink(fromProjectId, toProjectId, northToSouth) {
   const directLink = PROJECT_LINK_SPECS.find(
     (link) => link.fromId === fromProjectId && link.toId === toProjectId
@@ -661,9 +736,10 @@ async function buildFutureRoute(from, to, projects) {
   try {
     for (let index = 0; index < selectedProjects.length; index += 1) {
       const project = selectedProjects[index];
-      const entryPoint = northToSouth ? project.northPortal : project.southPortal;
-      const exitPoint = northToSouth ? project.southPortal : project.northPortal;
-      const projectGeometry = northToSouth ? reverseGeometry(project.geometry) : project.geometry;
+      const projectPath = projectPathForRoute(project, from, to, northToSouth);
+      const entryPoint = projectPath.entryPoint;
+      const exitPoint = projectPath.exitPoint;
+      const projectGeometry = projectPath.geometry;
       const previousProject = index > 0 ? selectedProjects[index - 1] : null;
       const projectLink = previousProject
         ? findProjectLink(previousProject.id, project.id, northToSouth)
