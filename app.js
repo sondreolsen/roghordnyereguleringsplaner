@@ -301,6 +301,32 @@ async function fetchValhallaRoute(from, to, allowFerries = true) {
   return data.routes[0];
 }
 
+async function fetchOsrmRoute(from, to) {
+  const url = new URL(
+    `https://router.project-osrm.org/route/v1/driving/${from.lon},${from.lat};${to.lon},${to.lat}`
+  );
+  url.searchParams.set("overview", "full");
+  url.searchParams.set("geometries", "geojson");
+  url.searchParams.set("steps", "true");
+
+  const response = await fetch(url, {
+    headers: {
+      Accept: "application/json"
+    }
+  });
+
+  if (!response.ok) {
+    throw new Error(`Ruteberegning feilet med status ${response.status}.`);
+  }
+
+  const data = await response.json();
+  if (!data.routes || !data.routes.length) {
+    throw new Error("Fant ingen kjorbar rute mellom adressene.");
+  }
+
+  return data.routes[0];
+}
+
 function wait(milliseconds) {
   return new Promise((resolve) => {
     window.setTimeout(resolve, milliseconds);
@@ -313,6 +339,24 @@ async function fetchRouteWithRetry(from, to, allowFerries = true, attempts = 3) 
   for (let attempt = 1; attempt <= attempts; attempt += 1) {
     try {
       return await fetchValhallaRoute(from, to, allowFerries);
+    } catch (error) {
+      lastError = error;
+
+      if (attempt < attempts) {
+        await wait(250 * attempt);
+      }
+    }
+  }
+
+  throw lastError;
+}
+
+async function fetchOsrmRouteWithRetry(from, to, attempts = 3) {
+  let lastError = null;
+
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    try {
+      return await fetchOsrmRoute(from, to);
     } catch (error) {
       lastError = error;
 
@@ -548,26 +592,35 @@ async function buildForcedFerryRoute(from, to, ferrySpec) {
   const firstTerminal = northToSouth ? ferrySpec.northTerminal : ferrySpec.southTerminal;
   const secondTerminal = northToSouth ? ferrySpec.southTerminal : ferrySpec.northTerminal;
 
-  const [firstLeg, ferryLeg, lastLeg] = await Promise.all([
-    fetchRouteWithRetry(from, firstTerminal, true),
-    fetchRouteWithRetry(firstTerminal, secondTerminal, true),
-    fetchRouteWithRetry(secondTerminal, to, true)
+  const [firstLeg, lastLeg] = await Promise.all([
+    fetchOsrmRouteWithRetry(from, firstTerminal),
+    fetchOsrmRouteWithRetry(secondTerminal, to)
   ]);
+  const ferryGeometry = {
+    type: "LineString",
+    coordinates: [
+      [firstTerminal.lon, firstTerminal.lat],
+      [secondTerminal.lon, secondTerminal.lat]
+    ]
+  };
+  const ferryDistance = geometryLengthMeters(ferryGeometry);
 
   return {
     geometry: combineLineStrings([
       routeGeometry(firstLeg),
-      routeGeometry(ferryLeg),
+      ferryGeometry,
       routeGeometry(lastLeg)
     ]),
     duration: firstLeg.duration + (ferrySpec.crossingMinutes * 60) + lastLeg.duration,
-    distance: firstLeg.distance + ferryLeg.distance + lastLeg.distance,
+    distance: firstLeg.distance + ferryDistance + lastLeg.distance,
     usedPreferredFerry: ferrySpec.id
   };
 }
 
 async function buildCurrentRoute(from, to, allowFerries) {
-  const directRoute = await fetchRouteWithRetry(from, to, allowFerries);
+  const directRoute = allowFerries
+    ? await fetchOsrmRouteWithRetry(from, to)
+    : await fetchRouteWithRetry(from, to, false);
 
   if (!allowFerries) {
     return {
