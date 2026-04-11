@@ -87,6 +87,18 @@ const PROJECT_LINK_SPECS = [
 
 const CURRENT_FERRY_SPECS = [
   {
+    id: "halhjem-sandvikvag",
+    name: "Halhjem-Sandvikvag",
+    northTerminal: { lon: 5.427726, lat: 60.146198 },
+    southTerminal: { lon: 5.3381108, lat: 59.9678339 },
+    crossingMinutes: 40,
+    corridor: {
+      northMinLat: 60.1,
+      southMaxLat: 59.98,
+      eastMaxLon: 6.7
+    }
+  },
+  {
     id: "lavik-oppedal",
     name: "Lavik-Oppedal",
     northTerminal: { lon: 5.507007, lat: 61.104983 },
