@@ -9,7 +9,7 @@ const PROJECT_SPECS = [
     name: "Hordfast",
     file: "./hordfast_simplified.geojson",
     color: "#7c3aed",
-    speedKph: 110,
+    speedKph: 100,
     routeObjectIds: [1, 2, 3, 4, 5, 6, 8, 7, 9, 10, 11, 12, 13, 14, 15, 16],
     northPortal: { lon: 5.44045, lat: 60.20445 },
     southPortal: { lon: 5.49657, lat: 59.79889 },
