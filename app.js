@@ -96,6 +96,11 @@ const CURRENT_FERRY_SPECS = [
       northMinLat: 60.1,
       southMaxLat: 59.98,
       eastMaxLon: 6.7
+    },
+    preferredCorridor: {
+      northMinLat: 60.05,
+      southMaxLat: 59.7,
+      eastMaxLon: 5.9
     }
   },
   {
@@ -599,6 +604,24 @@ function shouldEvaluateCurrentFerry(ferrySpec, from, to) {
   );
 }
 
+function shouldPreferCurrentFerry(ferrySpec, from, to) {
+  const corridor = ferrySpec.preferredCorridor;
+
+  if (!corridor) {
+    return false;
+  }
+
+  const northLat = Math.max(from.lat, to.lat);
+  const southLat = Math.min(from.lat, to.lat);
+  const eastLon = Math.max(from.lon, to.lon);
+
+  return (
+    northLat >= corridor.northMinLat &&
+    southLat <= corridor.southMaxLat &&
+    eastLon <= corridor.eastMaxLon
+  );
+}
+
 async function buildForcedFerryRoute(from, to, ferrySpec) {
   const northToSouth = from.lat >= to.lat;
   const firstTerminal = northToSouth ? ferrySpec.northTerminal : ferrySpec.southTerminal;
@@ -666,6 +689,10 @@ async function buildCurrentRoute(from, to, allowFerries) {
   for (const ferrySpec of candidateFerries) {
     try {
       const forcedRoute = await buildForcedFerryRoute(from, to, ferrySpec);
+
+      if (shouldPreferCurrentFerry(ferrySpec, from, to)) {
+        return forcedRoute;
+      }
 
       if (forcedRoute.duration < bestRoute.duration) {
         bestRoute = forcedRoute;
