@@ -135,23 +135,11 @@ button:hover {
 
 .map-type-picker {
   display: grid;
-  justify-items: center;
-  gap: 8px;
-  margin-top: 12px;
-}
-
-.picker-label {
-  margin: 0;
-  color: var(--muted);
-  font-size: 0.92rem;
-  font-weight: 700;
 }
 
 .picker-options {
   display: flex;
-  gap: 14px;
-  flex-wrap: wrap;
-  justify-content: center;
+  gap: 8px;
 }
 
 .map-type-option {
@@ -167,14 +155,14 @@ button:hover {
 .map-type-card {
   display: grid;
   place-items: end center;
-  width: 106px;
-  height: 72px;
-  padding: 10px;
+  width: 76px;
+  height: 54px;
+  padding: 8px;
   border: 2px solid rgba(31, 42, 36, 0.12);
-  border-radius: 18px;
+  border-radius: 14px;
   background-color: rgba(255, 255, 255, 0.8);
   color: var(--text);
-  font-size: 0.95rem;
+  font-size: 0.78rem;
   font-weight: 700;
   cursor: pointer;
   overflow: hidden;
@@ -246,6 +234,10 @@ button:hover {
   background: rgba(247, 251, 255, 0.9);
 }
 
+.map-canvas-wrap {
+  position: relative;
+}
+
 .map-card-header {
   padding: 12px 14px 8px;
 }
@@ -296,6 +288,18 @@ button:hover {
   background: #dbe8dc;
 }
 
+.map-type-picker-floating {
+  position: absolute;
+  left: 12px;
+  bottom: 12px;
+  z-index: 500;
+  padding: 8px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.88);
+  border: 1px solid rgba(31, 42, 36, 0.08);
+  box-shadow: 0 8px 20px rgba(25, 23, 18, 0.12);
+}
+
 .leaflet-popup-content-wrapper {
   border-radius: 16px;
 }
@@ -337,10 +341,6 @@ button:hover {
 
   .hero h1 {
     white-space: normal;
-  }
-
-  .picker-options {
-    gap: 10px;
   }
 
   .actions {
