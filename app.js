@@ -89,7 +89,7 @@ const CURRENT_FERRY_SPECS = [
   {
     id: "halhjem-sandvikvag",
     name: "Halhjem-Sandvikvag",
-    northTerminal: { lon: 5.427726, lat: 60.146198 },
+    northTerminal: { lon: 5.42668, lat: 60.14567 },
     southTerminal: { lon: 5.3381108, lat: 59.9678339 },
     crossingMinutes: 40,
     corridor: {
