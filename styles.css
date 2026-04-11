@@ -133,6 +133,72 @@ button:hover {
   color: #f6fbfa;
 }
 
+.map-type-picker {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.picker-label {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+
+.picker-options {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.map-type-option {
+  display: block;
+}
+
+.map-type-option input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.map-type-card {
+  display: grid;
+  place-items: end center;
+  width: 106px;
+  height: 72px;
+  padding: 10px;
+  border: 2px solid rgba(31, 42, 36, 0.12);
+  border-radius: 18px;
+  background-color: rgba(255, 255, 255, 0.8);
+  color: var(--text);
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  overflow: hidden;
+  box-shadow: 0 10px 20px rgba(25, 23, 18, 0.08);
+}
+
+.standard-preview {
+  background:
+    linear-gradient(rgba(255,255,255,0), rgba(255,255,255,0.22)),
+    linear-gradient(135deg, #9ad4ef 0 36%, #f8efe3 36% 54%, #6dbb7a 54% 100%);
+}
+
+.satellite-preview {
+  background:
+    linear-gradient(rgba(255,255,255,0), rgba(255,255,255,0.16)),
+    linear-gradient(135deg, #5f6e5d 0 25%, #4a4f45 25% 45%, #7d7666 45% 65%, #4e5a4a 65% 100%);
+  color: #fff;
+}
+
+.map-type-option input:checked + .map-type-card {
+  border-color: rgba(15, 118, 110, 0.9);
+  box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.16);
+}
+
 .savings-card {
   display: grid;
   justify-items: center;
@@ -271,6 +337,10 @@ button:hover {
 
   .hero h1 {
     white-space: normal;
+  }
+
+  .picker-options {
+    gap: 10px;
   }
 
   .actions {

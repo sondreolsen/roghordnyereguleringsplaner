@@ -127,11 +127,29 @@ const futureDurationOutput = document.getElementById("future-duration-output");
 const futureDistanceOutput = document.getElementById("future-distance-output");
 const savingsOutput = document.getElementById("savings-output");
 const statusOutput = document.getElementById("status-output");
+const mapTypeInputs = document.querySelectorAll('input[name="map-type"]');
+
+const BASE_LAYER_DEFINITIONS = {
+  standard: {
+    url: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+    options: {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+    }
+  },
+  satellite: {
+    url: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+    options: {
+      attribution:
+        'Tiles &copy; Esri, Maxar, Earthstar Geographics, and the GIS User Community'
+    }
+  }
+};
 
 const currentMap = createMap("current-map");
 const futureMap = createMap("future-map");
 
 syncMaps(currentMap, futureMap);
+setMapType("standard");
 
 const projectDataPromise = Promise.all(PROJECT_SPECS.map(loadProjectSpec));
 
@@ -145,12 +163,27 @@ function createMap(elementId) {
     zoomControl: true,
     minZoom: 6
   }).fitBounds(VESTLANDET_BOUNDS, { padding: [20, 20] });
-
-  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-  }).addTo(map);
+  map.baseLayers = {};
 
   return map;
+}
+
+function ensureBaseLayer(mapInstance, mapType) {
+  if (mapInstance.baseLayers[mapType]) {
+    return mapInstance.baseLayers[mapType];
+  }
+
+  const definition = BASE_LAYER_DEFINITIONS[mapType];
+  const layer = L.tileLayer(definition.url, definition.options);
+  mapInstance.baseLayers[mapType] = layer;
+  return layer;
+}
+
+function setMapType(mapType) {
+  [currentMap, futureMap].forEach((mapInstance) => {
+    Object.values(mapInstance.baseLayers).forEach((layer) => removeLayerIfExists(mapInstance, layer));
+    ensureBaseLayer(mapInstance, mapType).addTo(mapInstance);
+  });
 }
 
 function syncMaps(mapA, mapB) {
@@ -896,3 +929,10 @@ async function handleRouteSubmit(event) {
 }
 
 routeForm.addEventListener("submit", handleRouteSubmit);
+mapTypeInputs.forEach((input) => {
+  input.addEventListener("change", () => {
+    if (input.checked) {
+      setMapType(input.value);
+    }
+  });
+});

@@ -44,6 +44,19 @@
           <button type="submit" id="submit-button">Se reisetid!</button>
         </div>
       </form>
+      <section class="map-type-picker" aria-label="Velg karttype">
+        <p class="picker-label">Karttype</p>
+        <div class="picker-options">
+          <label class="map-type-option">
+            <input type="radio" name="map-type" value="standard" checked>
+            <span class="map-type-card standard-preview">Standard</span>
+          </label>
+          <label class="map-type-option">
+            <input type="radio" name="map-type" value="satellite">
+            <span class="map-type-card satellite-preview">Satelitt</span>
+          </label>
+        </div>
+      </section>
       <div class="savings-card">
         <span class="savings-label">Du sparer</span>
         <strong id="savings-output">-</strong>
