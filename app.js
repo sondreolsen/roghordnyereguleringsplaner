@@ -131,17 +131,31 @@ const mapTypeInputs = document.querySelectorAll('input[name="map-type"]');
 
 const BASE_LAYER_DEFINITIONS = {
   standard: {
-    url: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-    options: {
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-    }
+    layers: [
+      {
+        url: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+        options: {
+          attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+        }
+      }
+    ]
   },
   satellite: {
-    url: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
-    options: {
-      attribution:
-        'Tiles &copy; Esri, Maxar, Earthstar Geographics, and the GIS User Community'
-    }
+    layers: [
+      {
+        url: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+        options: {
+          attribution:
+            'Tiles &copy; Esri, Maxar, Earthstar Geographics, and the GIS User Community'
+        }
+      },
+      {
+        url: "https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}",
+        options: {
+          attribution: "Labels &copy; Esri"
+        }
+      }
+    ]
   }
 };
 
@@ -174,7 +188,9 @@ function ensureBaseLayer(mapInstance, mapType) {
   }
 
   const definition = BASE_LAYER_DEFINITIONS[mapType];
-  const layer = L.tileLayer(definition.url, definition.options);
+  const layer = L.layerGroup(
+    definition.layers.map((layerDefinition) => L.tileLayer(layerDefinition.url, layerDefinition.options))
+  );
   mapInstance.baseLayers[mapType] = layer;
   return layer;
 }
